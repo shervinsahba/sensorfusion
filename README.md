@@ -20,3 +20,17 @@ AEL data is not currently provided, but as a note for the future, it too can be 
 python -m src.dataprocessing_ael [sh_sh/dh_dh/sh_dh]
 ```
 where the required sensor pairings must be provided.
+
+
+## runs
+
+The scripts in `src/models` may be run directly like
+```
+python -m src.models.ks
+```
+or the hyperparameter optimization tool [guild](https://guild.ai) may be invoked instead with commands like
+```
+guild operations
+guild run ks:train
+guild compare
+```

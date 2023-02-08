@@ -2,13 +2,15 @@ import numpy as np
 from ..torch_boilerplate import *
 from ..SDNN import SDNN, get_dataloader
 
-# import matplotlib.pyplot as plt
-# from matplotlib import patches
+import matplotlib.pyplot as plt
+from matplotlib import patches
+from pathlib import Path
+import os
 
 DEVRUN = False
 MAKEFIGS = True
 
-datafile = 'ks_32_embed1.npy'
+datafile = 'ks_tr8_xr64_en1.npy'
 with open(f"data/ks/{datafile}", 'rb') as f:
     dataset_x = np.load(f)
     dataset_y = np.load(f)
@@ -55,9 +57,9 @@ print(f"valid_loss: {valid_loss}")
 
 
 if MAKEFIGS:
-    import matplotlib.pyplot as plt
-    from matplotlib import patches
-    import os
+
+    figbasename = Path(datafile).stem
+    
     if not os.path.exists("figs"):
         os.mkdir("figs")
 
@@ -80,7 +82,7 @@ if MAKEFIGS:
         fig.colorbar(im1, ax=ax, pad=0.02)
 
     plot_ml_results(train_x[:valid_n,:xn], train_out[:valid_n,:], train_y[:valid_n,:], train_loss)
-    plt.savefig(f"figs/ks-{xn}-train"+".png", transparent=False)
+    plt.savefig(f"figs/{figbasename}_train.png", transparent=False)
         
     plot_ml_results(valid_x[:,:xn], valid_out, valid_y, valid_loss)
-    plt.savefig(f"figs/ks-{xn}-valid"+".png", transparent=False)
+    plt.savefig(f"figs/{figbasename}_valid.png", transparent=False)
