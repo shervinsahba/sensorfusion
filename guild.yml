@@ -1,0 +1,143 @@
+- model: ks
+  operations:
+    train:
+      sourcecode:
+        - exclude: '*.ipynb'
+        - exclude: '*.md'
+        - exclude: '.git*'
+      requires:
+        - file: data/ks/ks_tr8_xr64_en1.npy
+          target-path: data/ks
+          target-type: link
+        - file: data/ks/ks_tr8_xr64_en2.npy
+          target-path: data/ks
+          target-type: link
+        - file: data/ks/ks_tr8_xr64_en4.npy
+          target-path: data/ks
+          target-type: link
+        - file: data/ks/ks_tr8_xr64_en8.npy
+          target-path: data/ks
+          target-type: link
+        - file: figs
+          target-type: link
+      main: src.models.ks
+      output-scalars:
+        - step: 'epoch: (\step)'
+        - train_loss: 'train_loss: (\value)'
+        - loss: 'valid_loss: (\value)'
+      flags:
+        DEVRUN: False
+        MAKEFIGS: True
+        bs: 128
+        lr: 0.0007
+        epochs: 80
+        l1_size: 8192
+        l2_size: 64
+        datafile: 'ks_tr8_xr64_en1.npy'
+
+- model: sh_sh
+  operations:
+    train:
+      sourcecode:
+        - exclude: '*.ipynb'
+        - exclude: '*.md'
+        - exclude: '.git*'
+      requires:
+        - file: data/ael/sh_sh_exp0_tr8_xr3_yr3_en1.npy
+          target-path: data/ael
+          target-type: link
+        - file: data/ael/sh_sh_exp0_tr8_xr3_yr3_en2.npy
+          target-path: data/ael
+          target-type: link
+        - file: data/ael/sh_sh_exp0_tr8_xr3_yr3_en4.npy
+          target-path: data/ael
+          target-type: link
+        - file: data/ael/sh_sh_exp0_tr8_xr3_yr3_en8.npy
+          target-path: data/ael
+          target-type: link
+        - file: figs
+          target-type: link
+      main: src.models.sh_sh
+      output-scalars:
+        - step: 'epoch: (\step)'
+        - train_loss: 'train_loss: (\value)'
+        - loss: 'valid_loss: (\value)'
+      flags:
+        DEVRUN: False
+        MAKEFIGS: True
+        bs: 64
+        lr: 0.0025
+        epochs: 500
+        l1_size: 8192
+        l2_size: 256
+        dropout_p: 0.3
+        datafile: 'sh_sh_exp0_tr8_xr3_yr3_en1.npy'
+
+
+- model: dh_dh
+  operations:
+    train:
+      sourcecode:
+        - exclude: '*.ipynb'
+        - exclude: '*.md'
+        - exclude: '.git*'
+      requires:
+        - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en1.npy
+          target-path: data/ael
+          target-type: link
+        - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en2.npy
+          target-path: data/ael
+          target-type: link
+        - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en4.npy
+          target-path: data/ael
+          target-type: link
+        - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en8.npy
+          target-path: data/ael
+          target-type: link
+        - file: figs
+          target-type: link
+      main: src.models.dh_dh
+      output-scalars:
+        - step: 'epoch: (\step)'
+        - train_loss: 'train_loss: (\value)'
+        - loss: 'valid_loss: (\value)'
+      flags:
+        DEVRUN: False
+        MAKEFIGS: True
+        bs: 64
+        lr: 0.03
+        epochs: 4000
+        l1_size: 8192
+        l2_size: 512
+        dropout_p: 0.3
+        datafile: 'dh_dh_exp0_tr8_xr3_yr3_en1.npy'
+
+
+- model: sh_dh
+  operations:
+    train:
+      sourcecode:
+        - exclude: '*.ipynb'
+        - exclude: '*.md'
+        - exclude: '.git*'
+      requires:
+        - file: data/ael/sh_dh_exp0_en1.npy
+          target-path: data/ael
+          target-type: link
+        - file: figs
+          target-type: link
+      main: src.models.sh_dh
+      output-scalars:
+        - step: 'epoch: (\step)'
+        - train_loss: 'train_loss: (\value)'
+        - loss: 'valid_loss: (\value)'
+      flags:
+        DEVRUN: False
+        MAKEFIGS: True
+        bs: 64
+        lr: 0.03
+        epochs: 5000
+        l1_size: 8192
+        l2_size: 512
+        dropout_p: 0.3
+        datafile: 'sh_dh_exp0_en1.npy'
