@@ -20,20 +20,24 @@
           target-type: link
         - file: figs
           target-type: link
-      main: src.models.ks
+      main: src.fusion1d
       output-scalars:
         - step: 'epoch: (\step)'
         - train_loss: 'train_loss: (\value)'
         - loss: 'valid_loss: (\value)'
       flags:
+        datafile: 'ks_tr8_xr64_en1.npy'
         DEVRUN: False
         MAKEFIGS: True
+        MAKEVIDS: True
+        valid_n: 2000
+        epochs: 80
         bs: 128
         lr: 0.0007
-        epochs: 80
-        l1_size: 8192
-        l2_size: 64
-        datafile: 'ks_tr8_xr64_en1.npy'
+        l1: 8192
+        l2: 64
+        dp: 0.3
+
 
 - model: sh_sh
   operations:
@@ -57,7 +61,7 @@
           target-type: link
         - file: figs
           target-type: link
-      main: src.models.sh_sh
+      main: src.fusion2d
       output-scalars:
         - step: 'epoch: (\step)'
         - train_loss: 'train_loss: (\value)'
@@ -65,6 +69,8 @@
       flags:
         DEVRUN: False
         MAKEFIGS: True
+        MAKEVIDS: True
+        valid_n: 500
         bs: 64
         lr: 0.0025
         epochs: 500
@@ -96,7 +102,7 @@
           target-type: link
         - file: figs
           target-type: link
-      main: src.models.dh_dh
+      main: src.fusion2d
       output-scalars:
         - step: 'epoch: (\step)'
         - train_loss: 'train_loss: (\value)'
@@ -126,7 +132,7 @@
           target-type: link
         - file: figs
           target-type: link
-      main: src.models.sh_dh
+      main: src.fusion2d
       output-scalars:
         - step: 'epoch: (\step)'
         - train_loss: 'train_loss: (\value)'

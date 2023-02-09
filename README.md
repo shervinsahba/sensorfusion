@@ -26,11 +26,12 @@ where the required sensor pairings must be provided.
 
 The scripts in `src/models` may be run directly like
 ```
-python -m src.models.ks
+python -m src.fusion1d
 ```
 or the hyperparameter optimization tool [guild](https://guild.ai) may be invoked instead with commands like
 ```
 guild operations
 guild run ks:train
+guild run ks:train l2='[32,64,128]'
 guild compare
 ```
