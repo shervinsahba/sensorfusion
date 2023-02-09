@@ -2,6 +2,16 @@ import scipy.io as sio
 import numpy as np
 import argparse
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--data', help='ks simulation data', nargs='?', default='data/ks/raw/ks-superset-2048x98000.mat')
+    parser.add_argument('--tr', help='temporal sampling rate', nargs='?', default=8, type=int)
+    parser.add_argument('--xr', help='spatial sampling rate', nargs='?', default=64, type=int)
+    parser.add_argument('--exp', help='ael experiment', nargs='?', default=0, type=int)                         
+    parser.add_argument('--en', help='number of embeddings', nargs='?', default=1, type=int)          
+    parser.add_argument('--label', help='label by xn or xr', nargs='?', default='xr')              
+    return parser.parse_args()
+
 def stack_samples(a, b=None, embed=1):
     """creates row-wise embeddings of 2-D data.
     e.g. a (5,10) array with 3 embeddings returns a (15,8) array."""
@@ -15,23 +25,9 @@ def stack_samples(a, b=None, embed=1):
     return b
 
 
-if __name__ == "__main__":
+def main(data,tr,xr,exp,en,label):
 
-    # parse command line arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--tr', help='temporal sampling rate', 
-                        nargs='?', default=8, type=int)
-    parser.add_argument('--xr', help='spatial sampling rate', 
-                        nargs='?', default=64, type=int)
-    parser.add_argument('--exp', help='ael experiment', 
-                        nargs='?', default=0, type=int)                         
-    parser.add_argument('--en', help='number of embeddings', 
-                        nargs='?', default=1, type=int)          
-    parser.add_argument('--label', help='label by xn or xr',
-                        nargs='?', default='xr')              
-    args = parser.parse_args()
-
-    data = sio.loadmat('data/ks/raw/ks-superset-2048x98000.mat')['data']
+    data = sio.loadmat(data)['data']
     uu = data['uu'][0,0].T
     # tt = data['tt'][0,0].T
 
@@ -55,3 +51,8 @@ if __name__ == "__main__":
         np.save(f, dataset_y)
         np.save(f, xn)
     print(f"saved {filename}")    
+
+
+if __name__ == "__main__":
+    args = parse_arguments()
+    main(**vars(args))

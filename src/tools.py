@@ -63,12 +63,11 @@ def matplotlib_settings(small_size=10,medium_size=14,bigger_size=16):
 
 
 def plot_1d_results(x, r, y, loss=None):
-    fig, ax = plt.subplots(1,4,figsize=(10,6), sharey=True)
+    fig, ax = plt.subplots(1,3,figsize=(10,6), sharey=True)
     vmin, vmax = np.min(y),np.max(y)       
     im0 = ax[0].pcolormesh(x,cmap='inferno',vmin=vmin,vmax=vmax)    
     im1 = ax[1].pcolormesh(r,cmap='inferno',vmin=vmin,vmax=vmax)
     im2 = ax[2].pcolormesh(y,cmap='inferno',vmin=vmin,vmax=vmax)
-    im3 = ax[3].pcolormesh(y-r,cmap='inferno',vmin=vmin,vmax=vmax)
     ax[0].set_ylabel('t (snapshot)')
     ax[1].set_xlabel('x (px)')
     for axis,label in zip(ax,['Input','Result','Desired Output']):
@@ -81,14 +80,15 @@ def plot_1d_results(x, r, y, loss=None):
     fig.colorbar(im1, ax=ax, pad=0.02)
 
 
-def plot_2d_result(x, r, y, t=0, loss=None, cmap='jet'):
-        fig, ax = plt.subplots(1,4,figsize=(8,2), sharey=False)
+def plot_2d_result(x, r, y, t=0, loss=None):
+        fig, ax = plt.subplots(1,4,figsize=(10,2), sharey=False)
         t = int(t)
-        im0 = ax[0].pcolormesh(x[t,:,:],cmap=cmap)
-        im1 = ax[1].pcolormesh(r[t,:,:],cmap=cmap)
+        im0 = ax[0].pcolormesh(x[t,:,:])
+        im1 = ax[1].pcolormesh(r[t,:,:])
         vmin, vmax = im1.get_clim()
-        im2 = ax[2].pcolormesh(y[t,:,:],cmap=cmap,vmin=vmin,vmax=vmax)
-        im3 = ax[3].pcolormesh(y[t,:,:]-r[t,:,:],cmap=cmap,vmin=vmin,vmax=vmax)
+        s = r[t,:,:].shape
+        im2 = ax[2].pcolormesh(y[t,:,:],vmin=vmin,vmax=vmax)
+        im3 = ax[3].pcolormesh(y[t,:,:]-r[t,:,:],vmin=vmin,vmax=vmax)
         ax[0].set_ylabel('y (px)')
         ax[1].set_xlabel('x (px)')
         for axis,label in zip(ax,['Input Frame','Result','Desired Frame','Diff']):
@@ -97,5 +97,7 @@ def plot_2d_result(x, r, y, t=0, loss=None, cmap='jet'):
             axis.add_patch(rect)
         if loss is not None:
             ax[1].text(0.5,0.90,f"L2 = {np.round(loss,2)}",fontsize=10,c='w',transform=ax[1].transAxes)
+        [axis.set_aspect('equal') for axis in ax];
         plt.tight_layout()
-        fig.colorbar(im1, ax=ax, pad=0.02)
+        plt.colorbar(im3,fraction=0.046*s[0]/s[1], pad=0.04)
+

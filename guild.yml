@@ -9,15 +9,6 @@
         - file: data/ks/ks_tr8_xr64_en1.npy
           target-path: data/ks
           target-type: link
-        - file: data/ks/ks_tr8_xr64_en2.npy
-          target-path: data/ks
-          target-type: link
-        - file: data/ks/ks_tr8_xr64_en4.npy
-          target-path: data/ks
-          target-type: link
-        - file: data/ks/ks_tr8_xr64_en8.npy
-          target-path: data/ks
-          target-type: link
         - file: figs
           target-type: link
       main: src.fusion1d
@@ -33,7 +24,7 @@
         valid_n: 2000
         epochs: 80
         bs: 128
-        lr: 0.0007
+        lr: 0.001
         l1: 8192
         l2: 64
         dp: 0.3
@@ -50,15 +41,6 @@
         - file: data/ael/sh_sh_exp0_tr8_xr3_yr3_en1.npy
           target-path: data/ael
           target-type: link
-        - file: data/ael/sh_sh_exp0_tr8_xr3_yr3_en2.npy
-          target-path: data/ael
-          target-type: link
-        - file: data/ael/sh_sh_exp0_tr8_xr3_yr3_en4.npy
-          target-path: data/ael
-          target-type: link
-        - file: data/ael/sh_sh_exp0_tr8_xr3_yr3_en8.npy
-          target-path: data/ael
-          target-type: link
         - file: figs
           target-type: link
       main: src.fusion2d
@@ -67,17 +49,17 @@
         - train_loss: 'train_loss: (\value)'
         - loss: 'valid_loss: (\value)'
       flags:
+        datafile: 'sh_sh_exp0_tr8_xr3_yr3_en1.npy'
         DEVRUN: False
         MAKEFIGS: True
         MAKEVIDS: True
         valid_n: 500
+        epochs: 500
         bs: 64
         lr: 0.0025
-        epochs: 500
-        l1_size: 8192
-        l2_size: 256
-        dropout_p: 0.3
-        datafile: 'sh_sh_exp0_tr8_xr3_yr3_en1.npy'
+        l1: 8192
+        l2: 256
+        dp: 0.3
 
 
 - model: dh_dh
@@ -91,15 +73,6 @@
         - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en1.npy
           target-path: data/ael
           target-type: link
-        - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en2.npy
-          target-path: data/ael
-          target-type: link
-        - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en4.npy
-          target-path: data/ael
-          target-type: link
-        - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en8.npy
-          target-path: data/ael
-          target-type: link
         - file: figs
           target-type: link
       main: src.fusion2d
@@ -108,15 +81,17 @@
         - train_loss: 'train_loss: (\value)'
         - loss: 'valid_loss: (\value)'
       flags:
+        datafile: 'dh_dh_exp0_tr8_xr3_yr3_en1.npy'
         DEVRUN: False
         MAKEFIGS: True
+        MAKEVIDS: True
+        valid_n: 500
+        epochs: 4000
         bs: 64
         lr: 0.03
-        epochs: 4000
-        l1_size: 8192
-        l2_size: 512
-        dropout_p: 0.3
-        datafile: 'dh_dh_exp0_tr8_xr3_yr3_en1.npy'
+        l1: 8192
+        l2: 512
+        dp: 0.3
 
 
 - model: sh_dh
@@ -138,12 +113,14 @@
         - train_loss: 'train_loss: (\value)'
         - loss: 'valid_loss: (\value)'
       flags:
+        datafile: 'sh_dh_exp0_en1.npy'
         DEVRUN: False
         MAKEFIGS: True
+        MAKEVIDS: True
+        valid_n: 500
+        epochs: 5000
         bs: 64
         lr: 0.03
-        epochs: 5000
-        l1_size: 8192
-        l2_size: 512
-        dropout_p: 0.3
-        datafile: 'sh_dh_exp0_en1.npy'
+        l1: 8192
+        l2: 512
+        dp: 0.3

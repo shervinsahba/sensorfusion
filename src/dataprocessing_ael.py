@@ -3,6 +3,17 @@ import numpy as np
 from collections import Counter
 import h5py
 
+def parse_arguments():
+    parser = argparse.ArgumentParser()
+    parser.add_argument('data', help='data types [shsh,dhdh,shdh]')
+    parser.add_argument('--tr', help='temporal sampling rate', nargs='?', default=8, type=int)
+    parser.add_argument('--xr', help='spatial sampling rate along 1st axis', nargs='?', default=3, type=int)
+    parser.add_argument('--yr', help='spatial sampling rate along 2nd axis', nargs='?', default=3, type=int)
+    parser.add_argument('--exp', help='ael experiment', nargs='?', default=0, type=int)                         
+    parser.add_argument('--en', help='number of embeddings', nargs='?', default=1, type=int)                       
+    return parser.parse_args()
+
+
 def data_load(n, directory):
     """
     loads numpy matrices for sh and dh experiment n
@@ -80,25 +91,10 @@ def stack_samples(a, b=None, embed=1):
     return b
 
 
-if __name__ == "__main__":
-
-    # parse command line arguments
-    parser = argparse.ArgumentParser()
-    parser.add_argument('data', help='data types [shsh,dhdh,shdh]')
-    parser.add_argument('--tr', help='temporal sampling rate', 
-                        nargs='?', default=8, type=int)
-    parser.add_argument('--xr', help='spatial sampling rate along 1st axis', 
-                        nargs='?', default=3, type=int)
-    parser.add_argument('--yr', help='spatial sampling rate along 2nd axis', 
-                        nargs='?', default=3, type=int)
-    parser.add_argument('--exp', help='ael experiment', 
-                        nargs='?', default=0, type=int)                         
-    parser.add_argument('--en', help='number of embeddings', 
-                        nargs='?', default=1, type=int)                       
-    args = parser.parse_args()
+def main(data,tr,xr,yr,exp,en):
 
     # Select from experiments [0,1,2,3,4]
-    sh_phi, dh_phi, sh_t, dh_t = data_load(args.exp, "data/ael/raw/")
+    sh_phi, dh_phi, sh_t, dh_t = data_load(exp, "data/ael/raw/")
 
     # trim spatial dimensions some more
     r = 3.46              # scale ratio
@@ -110,19 +106,18 @@ if __name__ == "__main__":
     dh_g = dh_phi[:,aa:bb,cc:dd]
     print("trimmed sh and dh",[x.shape for x in [sh_g, dh_g]])
 
-
     # select data
-    print(f"selecting data {args.data}")
-    if args.data == "sh_sh":
+    print(f"selecting data {data}")
+    if data == "sh_sh":
         data_x = sh_g
         data_y = data_x
-    elif args.data == "dh_dh":
+    elif data == "dh_dh":
         data_x = dh_g
         data_y = data_x
-    elif args.data == "sh_dh":
-        # there is no temporal sampling for sh_dh, so setting args.tr to match args.en
+    elif data == "sh_dh":
+        # there is no temporal sampling for sh_dh, so setting tr to match en
         # will work for any embeddings later
-        args.tr = args.en  
+        tr = en  
         # trim dh times that are out of temporal range of the sh data
         if sh_t[-1] >= dh_t[-1]:
             dh_t = dh_t[dh_t<=sh_t[-1]]
@@ -133,17 +128,20 @@ if __name__ == "__main__":
         # find matching time indices
         sh_idx, dh_idx = get_matching_indices(sh_t,dh_t,roundto=5) 
         # create embeddings with matched times
-        dataset_x = sh_g[stack_indices(sh_idx,args.en),:,:]  # TODO bug that doesn't seem to affect production, but stack_indices can provide an out of range index theoretically
+        dataset_x = sh_g[stack_indices(sh_idx,en),:,:]  # TODO bug that doesn't seem to affect production, but stack_indices can provide an out of range index theoretically
         dataset_y = dh_g[dh_idx,:,:]
         print("matched times for sh_g and dh_g",[x.shape for x in [dataset_x, dataset_y]])
 
-
-    if (args.data == "sh_sh") or (args.data == "dh_dh"):
+    if data in ["sh_sh", "dh_dh"]:
         # subsample superset into x and y datasets
-        dataset_x = data_x[:,::args.xr,::args.yr]
-        dataset_y = data_y[::args.tr,:,:]
+        dataset_x = data_x[:,::xr,::yr]
+        dataset_y = data_y[::tr,:,:]
         print("subsampled", [x.shape for x in [dataset_x, dataset_y]], 
-            f"with tr={args.tr}, xr={args.xr}, yr={args.yr}")
+            f"with tr={tr}, xr={xr}, yr={yr}")
+
+    # store shapes of original data for reconstruction
+    shape_x = dataset_x.shape
+    shape_y = dataset_y.shape
 
     # flatten frames to vecs
     dataset_x = dataset_x.reshape(dataset_x.shape[0],-1)
@@ -151,7 +149,7 @@ if __name__ == "__main__":
     print("vectorized", [x.shape for x in [dataset_x, dataset_y]])
 
     # create embeddings by stacking samples and then slicing
-    dataset_x = stack_samples(dataset_x,embed=args.en)[::args.tr,:]
+    dataset_x = stack_samples(dataset_x,embed=en)[::tr,:]
     # in case arrays differ in size, choose smaller and slice off excess
     n_snapshots = min(dataset_x.shape[0],dataset_y.shape[0])
     dataset_x = dataset_x[:n_snapshots,:]
@@ -159,13 +157,19 @@ if __name__ == "__main__":
     print("embeddings", [x.shape for x in [dataset_x, dataset_y]])
 
     # save dataset
-    if (args.data == "sh_sh") or (args.data == "dh_dh"):
-        filename = f'data/ael/{args.data}_exp{args.exp}_tr{args.tr}_xr{args.xr}_yr{args.yr}_en{args.en}.npy'
-    elif args.data == "sh_dh":
-        filename = f'data/ael/{args.data}_exp{args.exp}_en{args.en}.npy'
+    if data in ["sh_sh", "dh_dh"]:
+        filename = f'data/ael/{data}_exp{exp}_tr{tr}_xr{xr}_yr{yr}_en{en}.npy'
+    elif data == "sh_dh":
+        filename = f'data/ael/{data}_exp{exp}_en{en}.npy'
     with open(filename, 'wb') as f:
         np.save(f, dataset_x)
         np.save(f, dataset_y)
-        np.save(f, dataset_x.shape)
-        np.save(f, dataset_y.shape)
+        np.save(f, shape_x)
+        np.save(f, shape_y)
     print(f"saved {filename}")
+
+
+if __name__ == "__main__":
+    args = parse_arguments()
+    main(**vars(args))
+
