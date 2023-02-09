@@ -77,27 +77,27 @@ def plot_1d_results(x, r, y, loss=None):
     if loss is not None:
         ax[1].text(0.5,0.95,f"L2 = {np.round(loss)}",fontsize=12,c='w',transform=ax[1].transAxes)
     plt.tight_layout()
-    fig.colorbar(im1, ax=ax, pad=0.02)
+    plt.colorbar(im1, ax=ax, pad=0.02)
 
 
 def plot_2d_result(x, r, y, t=0, loss=None):
-        fig, ax = plt.subplots(1,4,figsize=(10,2), sharey=False)
-        t = int(t)
-        im0 = ax[0].pcolormesh(x[t,:,:])
-        im1 = ax[1].pcolormesh(r[t,:,:])
-        vmin, vmax = im1.get_clim()
-        s = r[t,:,:].shape
-        im2 = ax[2].pcolormesh(y[t,:,:],vmin=vmin,vmax=vmax)
-        im3 = ax[3].pcolormesh(y[t,:,:]-r[t,:,:],vmin=vmin,vmax=vmax)
-        ax[0].set_ylabel('y (px)')
-        ax[1].set_xlabel('x (px)')
-        for axis,label in zip(ax,['Input Frame','Result','Desired Frame','Diff']):
-            axis.text(0.1,0.90,label,fontsize=12,c='white',transform=axis.transAxes)
-            rect = patches.Rectangle((0.00,0.90),1.0,0.10,facecolor='black', alpha=0.3, transform=axis.transAxes)
-            axis.add_patch(rect)
-        if loss is not None:
-            ax[1].text(0.5,0.90,f"L2 = {np.round(loss,2)}",fontsize=10,c='w',transform=ax[1].transAxes)
-        [axis.set_aspect('equal') for axis in ax];
-        plt.tight_layout()
-        plt.colorbar(im3,fraction=0.046*s[0]/s[1], pad=0.04)
+    fig, ax = plt.subplots(1,4,figsize=(10.5,2), sharey=False)
+    t = int(t)
+    im0 = ax[0].pcolormesh(x[t,:,:])
+    im1 = ax[1].pcolormesh(r[t,:,:])
+    vmin, vmax = im1.get_clim()
+    s = r[t,:,:].shape
+    im2 = ax[2].pcolormesh(y[t,:,:],vmin=vmin,vmax=vmax)
+    im3 = ax[3].pcolormesh(y[t,:,:]-r[t,:,:],vmin=vmin,vmax=vmax)
+    ax[0].set_ylabel('y (px)')
+    ax[1].set_xlabel('x (px)')
+    for axis,label in zip(ax,['Input Frame','Result','Desired Frame','Diff']):
+        axis.text(0.1,0.85,label,fontsize=11,c='white',transform=axis.transAxes)
+        rect = patches.Rectangle((0.00,0.85),1.0,0.10,facecolor='black', alpha=0.3, transform=axis.transAxes)
+        axis.add_patch(rect)
+    if loss is not None:
+        ax[1].text(0.5,0.90,f"L2 = {np.round(loss,2)}",fontsize=10,c='w',transform=ax[1].transAxes)
+    [axis.set_aspect('equal') for axis in ax];
+    plt.colorbar(im3,fraction=0.046*s[0]/s[1], pad=0.04)
+    plt.tight_layout()
 
