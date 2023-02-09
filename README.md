@@ -5,13 +5,13 @@ This repository contains work demonstrating the fusion of a low-spatial resoluti
 Datasets used include a 1-D Kuramoto-Sivashinsky simulation as well as 2-D Shack-Hartmann and Digital Holography sensors for aero-optical metrology, experimental data provided by the Aero Effects Laboratory (AEL) at AFRL. AEL data is not currently provided, but code to generate 1-D Kuramoto-Sivashisnky (KS) equation data is provided under `data/ks/raw/ks.m`. Running this MATLAB file creates a 1.4G file with 98000 snapshots, each with 2048 spatial pixels.
 
 ### subsampling into training datasets
-To process the KS superset into smaller datasets for experiments, run 
+To process the KS superset into smaller datasets for experiments, run the provided dataprocessing script from the base directory. Use the `--help` flag for subsampling options. For example, the following creates a dataset where the low-spatial resolution sensor has been downsampled to 1/64 the spatial pixels but uses four temporal snapshots embedded into each input
 ```
-python -m src.dataprocessing_ks
+python -m src.dataprocessing_ks --xr 64 --en 4
 ```
-from the base directory. Use the `--help` flag for subsampling options. A similar script is provided for AEL dataset users.
+A similar script is provided for AEL dataset users, where the sensor pairing needs to be declared as well.
 ```
-python -m src.dataprocessing_ael [sh_sh/dh_dh/sh_dh]
+python -m src.dataprocessing_ael [sh_sh | dh_dh | sh_dh]
 ```
 
 ## machine learning
