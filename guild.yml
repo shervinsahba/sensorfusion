@@ -27,7 +27,8 @@
         lr: 0.001
         l1: 8192
         l2: 64
-        dp: 0.3
+        dp1: 0.3
+        dp2: 0.0
 
 
 - model: sh_sh
@@ -59,7 +60,7 @@
         lr: 0.0025
         l1: 8192
         l2: 256
-        dp: 0.3
+        dp1: 0.3
 
 
 - model: dh_dh
@@ -71,6 +72,9 @@
         - exclude: '.git*'
       requires:
         - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en1.npy
+          target-path: data/ael
+          target-type: link
+        - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en2.npy
           target-path: data/ael
           target-type: link
         - file: figs
@@ -86,12 +90,12 @@
         MAKEFIGS: True
         MAKEVIDS: True
         valid_n: 500
-        epochs: 4000
-        bs: 64
-        lr: 0.03
-        l1: 8192
-        l2: 512
-        dp: 0.3
+        epochs: 3000
+        bs: 128
+        lr: 5e-5
+        l1: 2759
+        l2: 296
+        dp1: 0.3
 
 
 - model: sh_dh
@@ -103,6 +107,9 @@
         - exclude: '.git*'
       requires:
         - file: data/ael/sh_dh_exp0_en1.npy
+          target-path: data/ael
+          target-type: link
+        - file: data/ael/sh_dh_exp0_en2.npy
           target-path: data/ael
           target-type: link
         - file: figs
@@ -123,4 +130,4 @@
         lr: 0.03
         l1: 8192
         l2: 512
-        dp: 0.3
+        dp1: 0.3
