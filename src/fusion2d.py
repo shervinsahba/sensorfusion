@@ -5,8 +5,9 @@ from pathlib import Path
 from torch import optim, tensor
 import torch.nn.functional as F
 from .torch_boilerplate import get_torchdevice, fit
-from .SDNN import SDNN, get_dataloader
+from .SDNN import *
 from .tools import *
+
 matplotlib_settings()
 
 
@@ -19,14 +20,16 @@ def parse_arguments():
     parser.add_argument('--lr', help='learning rate', nargs='?', default=0.0025, type=float)
     parser.add_argument('--l1', help='layer 1 neurons', nargs='?', default=8192, type=int)
     parser.add_argument('--l2', help='layer 2 neurons', nargs='?', default=256, type=int)
-    parser.add_argument('--dp', help='dropout percentage', nargs='?', default=0.3, type=float)
+    parser.add_argument('--dp1', help='dropout1 percentage', nargs='?', default=0.3, type=float)
+    parser.add_argument('--dp2', help='dropout2 percentage', nargs='?', default=0.0, type=float)
     parser.add_argument('--DEVRUN', help='dev mode quickrun', nargs='?', default=False, type=bool)
     parser.add_argument('--MAKEFIGS', help='toggle making figures on', nargs='?', default=True, type=bool)
     parser.add_argument('--MAKEVIDS', help='toggle making movies on', nargs='?', default=True, type=bool)
     return parser.parse_args()
 
 
-def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp,DEVRUN,MAKEFIGS,MAKEVIDS):
+def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp1,dp2,
+        DEVRUN=False,MAKEFIGS=False,MAKEVIDS=False):
 
     ## load data
     if datafile is None:
@@ -48,8 +51,9 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp,DEVRUN,MAKEFIGS,MAKEVIDS):
     train_dl = get_dataloader(train_x, train_y, bs,   shuffle=False)
     valid_dl = get_dataloader(valid_x, valid_y, bs*2, shuffle=True )
     model = SDNN(train_x.shape[-1], train_y.shape[-1],
-            l1_size=l1, l2_size=l2, dropout_p=dp).to(dev)
-    opt = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+            l1=l1, l2=l2, dp1=dp1, dp2=dp2).to(dev)
+    # opt = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
+    opt = optim.Adam(model.parameters(), lr=lr)
     loss_func = F.mse_loss
     if DEVRUN:
         epochs = 3
@@ -57,10 +61,8 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp,DEVRUN,MAKEFIGS,MAKEVIDS):
 
     # retrieve model output
     model.cpu()
-    train_r = model(tensor(train_x).float().unsqueeze(1)).detach().numpy().squeeze()
-    valid_r = model(tensor(valid_x).float().unsqueeze(1)).detach().numpy().squeeze()
-    train_loss = F.mse_loss(*map(tensor, [train_r, train_y])).numpy()
-    valid_loss = F.mse_loss(*map(tensor, [valid_r, valid_y])).numpy()
+    train_r, train_loss = predict(train_x, train_y, model)
+    valid_r, valid_loss = predict(valid_x, valid_y, model)
     print(f"train_loss: {train_loss}")
     print(f"valid_loss: {valid_loss}")
 
@@ -70,6 +72,7 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp,DEVRUN,MAKEFIGS,MAKEVIDS):
 
     # unstack training set
     en = int(figbasename.split("en")[1].split("_")[0])
+    sensors = figbasename.split("_")[:2]
     train_x = train_x[:,:train_x.shape[1]//en]
     valid_x = valid_x[:,:valid_x.shape[1]//en]
     #reshape data
@@ -81,20 +84,43 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp,DEVRUN,MAKEFIGS,MAKEVIDS):
     valid_r = valid_r.reshape(-1,*shape_y[1:])
 
     if MAKEFIGS:
-        plot_2d_result(train_x, train_r, train_y, t=1)
-        plt.savefig(f"figs/{figbasename}_train_{l1}_{l2}.png", transparent=False)
+        vmin_vmax_train, ax = plot_2d_result(train_x,train_y,train_r,t=0,diff=True)
+        for pos in ['top', 'bottom', 'right', 'left']:
+            ax[2].spines[pos].set_linewidth(1.5)            
+        plt.savefig(f"figs/{figbasename}_train_{l1}_{l2}.png",
+                    transparent=False, bbox_inches='tight', dpi=300)
 
-        plot_2d_result(valid_x, valid_r,valid_y, t=1)
-        plt.savefig(f"figs/{figbasename}_valid_{l1}_{l2}.png", transparent=False)
+        vmin_vmax_valid, ax = plot_2d_result(valid_x,valid_y,valid_r,t=0,diff=True)
+        for pos in ['top', 'bottom', 'right', 'left']:
+            ax[2].spines[pos].set_linewidth(1.5)
+        plt.savefig(f"figs/{figbasename}_valid_{l1}_{l2}.png",
+                    transparent=False, bbox_inches='tight', dpi=300)
 
-    if MAKEVIDS:
-        f = lambda t: plot_2d_result(train_x,train_r,train_y,t=t)
-        generate_video(f,50,'figs/vids/',framerate=6,rm_images=True,transparent=False,
-                    filename=f"{figbasename}_train_{l1}_{l2}")
+        vmin_vmax_valid_psd, ax = plot_2d_result(train_x,train_y,train_r,t=0,diff=True, 
+                                    apply_map=lambda x: np.log(psd2(x)))
+        for pos in ['top', 'bottom', 'right', 'left']:
+            ax[2].spines[pos].set_linewidth(1.5)
+        plt.savefig(f"figs/{figbasename}_valid_psd_{l1}_{l2}.png",
+                    transparent=False, bbox_inches='tight', dpi=300)
 
-        g = lambda t: plot_2d_result(valid_x,valid_r,valid_y,t=t)
-        generate_video(g,50,'figs/vids/',framerate=6,rm_images=True,transparent=False,
-                    filename=f"{figbasename}_valid_{l1}_{l2}")
+        if MAKEVIDS:
+            f = lambda t: plot_2d_result(train_x,train_y,train_r,t=t,
+                            vmin=vmin_vmax_train[0],vmax=vmin_vmax_train[1])
+            generate_video(f,50,'figs/vids/',framerate=6,rm_images=True,transparent=False,
+                        filename=f"{figbasename}_train_{l1}_{l2}")
+
+            g = lambda t: plot_2d_result(valid_x,valid_y,valid_r,t=t,
+                            vmin=vmin_vmax_valid[0],vmax=vmin_vmax_valid[1])
+            generate_video(g,50,'figs/vids/',framerate=6,rm_images=True,transparent=False,
+                        filename=f"{figbasename}_valid_{l1}_{l2}")
+
+            g2 = lambda t: plot_2d_result(train_x,train_y,train_r,t=t,
+                            diff=True,vmin=vmin_vmax_valid_psd[0],vmax=vmin_vmax_valid_psd[1],
+                            apply_map=lambda x: np.log(psd2(x)))
+            generate_video(g2,50,'figs/vids/',framerate=6,rm_images=True,transparent=False,
+                        filename=f"{figbasename}_valid_psd_{l1}_{l2}")
+
+    return (train_x, train_y, train_r), (valid_x, valid_y, valid_r)
 
 
 if __name__ == "__main__":
