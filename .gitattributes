@@ -1,1 +1,9 @@
+## strip-notebook-output
+# This filter cleans a jupyter notebook's output upon git commit for filesize or sanitization reasons.
+# In order for it to run add the following to .git/config
+# [filter "strip-notebook-output"]
+#     clean = "jupyter nbconvert --ClearOutputPreprocessor.enabled=True --to=notebook --stdin --stdout --log-level=ERROR"
+
 *fusion2d.ipynb filter=strip-notebook-output
+
+
