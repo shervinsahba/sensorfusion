@@ -173,12 +173,6 @@ def plot_2d_result(x,y,r,t=0,vmin=None,vmax=None,diff=True,apply_map=None,cbar=T
     return (vmin,vmax), ax
 
 
-def predict(x, y, model):
-    r = model(tensor(x).float().unsqueeze(1)).detach().numpy().squeeze()
-    loss = np.mean((r-y)**2)
-    return r, loss
-
-
 def psd2(data, fftshift=True):
     """Compute 2D power spectrum for an n x m array 
     or a t x n x m time series of (n x m) arrays.
