@@ -21,6 +21,21 @@ def demean(a):
     return (a - a.mean(0))
 
 
+def embed_snapshots(a, b=None, embed=1):
+    """Creates row-wise embeddings of 2-D data.
+    Each row is appended to the previous row. The final row is discarded.
+    example: inputting a (5,10) array with embed=3 returns a (3,30) array.
+    Creating temporal embeddings assumes the first dimension in the array is time."""
+    if b is None:
+        b = a
+    if embed > 1:
+        embed -= 1
+        a = a[1:,:]
+        b = np.hstack((b[:-1,:],a))
+        b = embed_snapshots(a,b,embed)
+    return b
+
+
 def generate_video(plot_function,t_max,directory,framerate=20,dpi=300,
                    filename='out',rm_images=True,transparent=False):
     # generate images from plot_function
@@ -202,3 +217,9 @@ def timethis(func):
         print(func.__name__, end-start)
         return result
     return wrapper
+
+
+def vectorize_frames(x):
+    """ Takes an N-D array and returns a 2-D array with the first axis preserved.
+    """
+    return x.reshape(x.shape[0],-1)
