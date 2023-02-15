@@ -40,6 +40,30 @@ def data_load(n, directory):
     return sh_phi, dh_phi, sh_t, dh_t
 
 
+def data_select(sh_phi, dh_phi, sh_t, dh_t, exp=0):
+    # Trim spatial dimensions some more.
+    r = 3.46              # scale ratio
+    # TODO these values might only apply to experiment 0.
+    a,b,c,d = 4,19,15,45  # (15,30) region of interest on SH sensor
+    aa,bb,cc,dd = map(round, r * np.array([a,b,c-2,d-2]))
+    sh_g = sh_phi[:,a:b,c:d]
+    dh_g = dh_phi[:,aa:bb-2,cc:dd-4]  # edit DH a bit for (50,100) shape
+
+    # make sure our arrays don't contain nans
+    if np.isnan(sh_g).any() or np.isnan(dh_g).any():
+        raise ValueError("sh_g or dh_g contains nan! choose a different region.")
+
+    # Trim dh/sh times that are out of temporal range of the sh/dh data.
+    if sh_t[-1] >= dh_t[-1]:
+        dh_t = dh_t[dh_t<=sh_t[-1]]
+        dh_g = dh_g[:len(dh_t),:,:]
+    else:
+        sh_t = sh_t[sh_t<=dh_t[-1]]
+        sh_g = sh_g[:len(sh_t),:,:]
+    
+    return sh_g, dh_g, sh_t, dh_t
+
+
 def duplicates(x):
     """
     returns a list of duplicate entries in a list
@@ -89,26 +113,7 @@ def main(data,tr,xr,yr,exp,en):
     
     # Select from experiments [0,1,2,3,4]
     sh_phi, dh_phi, sh_t, dh_t = data_load(exp, "data/ael/raw/")
-
-    # Trim spatial dimensions some more.
-    r = 3.46              # scale ratio
-    # TODO these values might only apply to experiment 0.
-    a,b,c,d = 4,19,15,45  # (15,30) region of interest on SH sensor
-    aa,bb,cc,dd = map(round, r * np.array([a,b,c-2,d-2]))
-    sh_g = sh_phi[:,a:b,c:d]
-    dh_g = dh_phi[:,aa:bb-2,cc:dd-4]  # edit DH a bit for (50,100) shape
-
-    # make sure our arrays don't contain nans
-    if np.isnan(sh_g).any() or np.isnan(dh_g).any():
-        raise ValueError("sh_g or dh_g contains nan! choose a different region.")
-
-    # Trim dh/sh times that are out of temporal range of the sh/dh data.
-    if sh_t[-1] >= dh_t[-1]:
-        dh_t = dh_t[dh_t<=sh_t[-1]]
-        dh_g = dh_g[:len(dh_t),:,:]
-    else:
-        sh_t = sh_t[sh_t<=dh_t[-1]]
-        sh_g = sh_g[:len(sh_t),:,:]
+    sh_g, dh_g, sh_t, dh_t = data_select(sh_phi, dh_phi, sh_t, dh_t, exp=0)
 
     print("selected",[x.shape for x in [sh_g, dh_g]])
 
