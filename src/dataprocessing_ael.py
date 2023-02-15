@@ -81,7 +81,8 @@ def stack_indices(idx, sr):
 def stack_samples(a, b=None, embed=1):
     """Creates row-wise embeddings of 2-D data. 
     Each row is appended to the previous row. The final row is discarded.
-    example: inputting a (5,10) array with embed=3 returns a (3,30) array."""
+    example: inputting a (5,10) array with embed=3 returns a (3,30) array.
+    Creating temporal embeddings assumes the first dimension in the array is time."""
     if b is None:
         b = a  
     if embed > 1:
