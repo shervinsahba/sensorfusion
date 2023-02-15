@@ -5,13 +5,13 @@ This repository contains work demonstrating the fusion of a low-spatial resoluti
 Datasets used include a 1-D Kuramoto-Sivashinsky simulation as well as 2-D Shack-Hartmann and Digital Holography sensors for aero-optical metrology, experimental data provided by the Aero Effects Laboratory (AEL) at AFRL. AEL data is not currently provided, but code to generate 1-D Kuramoto-Sivashisnky (KS) equation data is provided under `data/ks/raw/ks.m`. Running this MATLAB file creates a 1.4G file with 98000 snapshots, each with 2048 spatial pixels.
 
 ### subsampling into training datasets
-To process the KS superset into smaller datasets for experiments, run the provided dataprocessing script from the base directory. Use the `--help` flag for subsampling options. For example, the following creates a dataset where the low-spatial resolution sensor has been downsampled to 1/64 the spatial pixels but uses four temporal snapshots embedded into each input
+To process the KS superset into smaller datasets for experiments, run the provided dataprocessing script from the base directory. Use the `--help` flag for subsampling options. For example, the following creates a dataset where the low-spatial resolution sensor has been downsampled to 1/64 the spatial pixels and uses two temporal embeddings for each input, while the high-spatial resolution sensor is sampled at every 10th frame.
 ```
-python -m src.dataprocessing_ks --xr 64 --en 4
+python -m src.dataprocessing_ks --xr 64 --en 2 --tr 10
 ```
 A similar script is provided for AEL dataset users, where the sensor pairing needs to be declared as well.
 ```
-python -m src.dataprocessing_ael [sh_sh | dh_dh | sh_dh]
+python -m src.dataprocessing_ael [sh_sh | dh_dh | sh_dh] [options...]
 ```
 
 ## machine learning
@@ -19,24 +19,17 @@ The sensorfusion modules may be run directly from the base directory. Run with t
 ```
 python -m src.fusion1d
 ```
+You can also check out the provided Jupyter notebook for the KS (fusion1d) problem.
 
 ### guild (hyperparameter optimization)
-Alternatively, use the hyperparameter optimization tool [guild](https://guild.ai) to invoke runs and track results. Here are some example queries.
+Alternatively, use the hyperparameter optimization tool [guild](https://guild.ai) and the `guild.yml` file to invoke runs and track results. Here are some example queries.
 
-1) View all operations, run a model with stock settings, look at run details.
+
+> View all operations. Run a KS model with various hidden layer sizes. Run it again with specific layers and tune the learning rate with Bayesian optimization. Turn off video creation. View results for that model, sorted by loss. Then check out tensorboard.
 ```
 guild operations
-guild run ks:train
-guild compare
-guild tensorboard
-```
-2) Run a model with various hidden layer sizes. View results for that model, sorted by loss.
-```
 guild run ks:train l1='[512,2048]' l2='[32,64,128]'
+guild run ks:train l1=2048 l2=32 lr='[0.01:0.1]' --optimizer gp MAKEVIDS=False
 guild compare -Fo ks:train --min loss
-```
-3) Run using a variety of learning rates with Bayesian optimization. Suppress video creation to save time. View the last 20 runs.
-```
-guild run ks:train lr='[0.01:0.1]' --optimizer gp MAKEVIDS=False
-guild compare :20
+guild tensorboard
 ```
