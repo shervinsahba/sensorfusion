@@ -85,21 +85,15 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp1,dp2,
 
     if MAKEFIGS:
         vmin_vmax_train, ax = plot_2d_result(train_x,train_y,train_r,t=0,diff=True)
-        for pos in ['top', 'bottom', 'right', 'left']:
-            ax[2].spines[pos].set_linewidth(1.5)            
         plt.savefig(f"figs/{figbasename}_train_{l1}_{l2}.png",
                     transparent=False, bbox_inches='tight', dpi=300)
 
         vmin_vmax_valid, ax = plot_2d_result(valid_x,valid_y,valid_r,t=0,diff=True)
-        for pos in ['top', 'bottom', 'right', 'left']:
-            ax[2].spines[pos].set_linewidth(1.5)
         plt.savefig(f"figs/{figbasename}_valid_{l1}_{l2}.png",
                     transparent=False, bbox_inches='tight', dpi=300)
 
         vmin_vmax_valid_psd, ax = plot_2d_result(train_x,train_y,train_r,t=0,diff=True, 
                                     apply_map=lambda x: np.log(psd2(x)))
-        for pos in ['top', 'bottom', 'right', 'left']:
-            ax[2].spines[pos].set_linewidth(1.5)
         plt.savefig(f"figs/{figbasename}_valid_psd_{l1}_{l2}.png",
                     transparent=False, bbox_inches='tight', dpi=300)
 
@@ -114,11 +108,11 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp1,dp2,
             generate_video(g,50,'figs/vids/',framerate=6,rm_images=True,transparent=False,
                         filename=f"{figbasename}_valid_{l1}_{l2}")
 
-            g2 = lambda t: plot_2d_result(train_x,train_y,train_r,t=t,
-                            diff=True,vmin=vmin_vmax_valid_psd[0],vmax=vmin_vmax_valid_psd[1],
-                            apply_map=lambda x: np.log(psd2(x)))
-            generate_video(g2,50,'figs/vids/',framerate=6,rm_images=True,transparent=False,
-                        filename=f"{figbasename}_valid_psd_{l1}_{l2}")
+            # g2 = lambda t: plot_2d_result(train_x,train_y,train_r,t=t,
+            #                 diff=True,vmin=vmin_vmax_valid_psd[0],vmax=vmin_vmax_valid_psd[1],
+            #                 apply_map=lambda x: np.log(psd2(x)))
+            # generate_video(g2,50,'figs/vids/',framerate=6,rm_images=True,transparent=False,
+            #             filename=f"{figbasename}_valid_psd_{l1}_{l2}")
 
     return (train_x, train_y, train_r), (valid_x, valid_y, valid_r)
 
