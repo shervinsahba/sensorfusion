@@ -27,8 +27,8 @@
         lr: 0.001
         l1: 8192
         l2: 64
-        dp1: 0.3
-        dp2: 0.0
+        d1: 0.3
+        d2: 0.0
 
 
 - model: sh_sh
@@ -60,7 +60,8 @@
         lr: 0.0025
         l1: 8192
         l2: 256
-        dp1: 0.3
+        d1: 0.3
+        d2: 0.0
 
 
 - model: dh_dh
@@ -77,6 +78,12 @@
         - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en2.npy
           target-path: data/ael
           target-type: link
+        - file: data/ael/dh_dh_exp0_tr8_xr10_yr10_en1.npy
+          target-path: data/ael
+          target-type: link
+        - file: data/ael/dh_dh_exp0_tr5_xr5_yr5_en1.npy
+          target-path: data/ael
+          target-type: link
         - file: figs
           target-type: link
       main: src.fusion2d
@@ -91,11 +98,12 @@
         MAKEVIDS: True
         valid_n: 500
         epochs: 3000
-        bs: 128
-        lr: 5e-5
+        bs: 512
+        lr: 1e-4
         l1: 2759
         l2: 296
-        dp1: 0.3
+        d1: 0.3
+        d2: 0.0
 
 
 - model: sh_dh
@@ -130,4 +138,5 @@
         lr: 0.03
         l1: 8192
         l2: 512
-        dp1: 0.3
+        d1: 0.3
+        d2: 0.0

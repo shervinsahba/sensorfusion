@@ -5,26 +5,24 @@ import torch.nn.functional as F
 from .torch_boilerplate import *
 
 class SDNN(nn.Module):
-    def __init__(self,input_size,output_size,l1=1024,l2=128,dp1=0.10,dp2=0.05):
+    def __init__(self,input_size,output_size,l1=1024,l2=128,d1=0.20,d2=0.00):
         super().__init__()
         self.input_size = input_size
         self.output_size = output_size
         self.l1 = l1
         self.l2 = l2
-        self.dp1 = dp1
-        self.dp2 = dp2
+        self.d1 = d1
+        self.d2 = d2
         
         self.learn_features = nn.Sequential(         
             nn.Linear(input_size, self.l1),
             nn.ReLU(inplace=True),
-            # nn.PReLU(num_parameters=input_size), 
-            nn.BatchNorm1d(1),  
+            nn.BatchNorm1d(1),
             )
         
         self.learn_coef = nn.Sequential(            
             nn.Linear(self.l1, self.l2),
             nn.ReLU(inplace=True),  
-            # nn.PReLU(num_parameters=l1),
             nn.BatchNorm1d(1),  
             )
 
@@ -45,9 +43,9 @@ class SDNN(nn.Module):
 
     def forward(self, xb):
         xb = self.learn_features(xb)
-        xb = F.dropout(xb, p=self.dp1, training=self.training)
+        xb = F.dropout(xb, p=self.d1, training=self.training)
         xb = self.learn_coef(xb)
-        xb = F.dropout(xb, p=self.dp2, training=self.training)
+        xb = F.dropout(xb, p=self.d2, training=self.training)
         xb = self.learn_dictionary(xb) 
         return xb
 
@@ -68,3 +66,4 @@ def predict(x, y, model):
     r = model(tensor(x).float().unsqueeze(1)).detach().numpy().squeeze()
     mse_loss = np.mean((r-y)**2)
     return r, mse_loss
+

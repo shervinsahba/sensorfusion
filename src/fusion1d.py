@@ -20,15 +20,15 @@ def parse_arguments():
     parser.add_argument('--lr', help='learning rate', nargs='?', default=0.001, type=float)
     parser.add_argument('--l1', help='layer 1 neurons', nargs='?', default=8192, type=int)
     parser.add_argument('--l2', help='layer 2 neurons', nargs='?', default=256, type=int)
-    parser.add_argument('--dp1', help='dropout1 percentage', nargs='?', default=0.3, type=float)
-    parser.add_argument('--dp2', help='dropout2 percentage', nargs='?', default=0.0, type=float)
+    parser.add_argument('--d1', help='dropout1 percentage', nargs='?', default=0.3, type=float)
+    parser.add_argument('--d2', help='dropout2 percentage', nargs='?', default=0.0, type=float)
     parser.add_argument('--DEVRUN', help='dev mode quickrun', nargs='?', default=False, type=bool)
     parser.add_argument('--MAKEFIGS', help='toggle making figures on', nargs='?', default=True, type=bool)
     parser.add_argument('--MAKEVIDS', help='toggle making movies on', nargs='?', default=True, type=bool)
     return parser.parse_args()
 
 
-def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp1,dp2,
+def main(datafile,valid_n,epochs,bs,lr,l1,l2,d1,d2,
         DEVRUN=False,MAKEFIGS=False,MAKEVIDS=False):
 
     ## load data
@@ -50,7 +50,7 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp1,dp2,
     train_dl = get_dataloader(train_x, train_y, bs,   shuffle=False)
     valid_dl = get_dataloader(valid_x, valid_y, bs*2, shuffle=True )
     model = SDNN(train_x.shape[-1], train_y.shape[-1],
-            l1=l1, l2=l2, dp1=dp1, dp2=dp2).to(dev)
+            l1=l1, l2=l2, d1=d1, d2=d2).to(dev)
     # opt = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     opt = optim.Adam(model.parameters(), lr=lr)
     loss_func = F.mse_loss
