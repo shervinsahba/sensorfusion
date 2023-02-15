@@ -16,11 +16,11 @@ def parse_arguments():
     return parser.parse_args()
 
 
-def data_load(n, directory):
+def data_load(directory, exp=0):
     """
     loads numpy matrices for sh and dh experiment n
     """
-    h5f = h5py.File(f'{directory}experiment{n}.h5','r')
+    h5f = h5py.File(f'{directory}experiment{exp}.h5','r')
     
     # load wavefront OPD data and trim
     sh_phi = h5f['sh_phi'][:][4:-2,2:,:]
@@ -112,8 +112,8 @@ def main(data,tr,xr,yr,exp,en):
         raise ValueError("data needs to be one of [sh_sh,dh_dh,sh_dh]")
     
     # Select from experiments [0,1,2,3,4]
-    sh_phi, dh_phi, sh_t, dh_t = data_load(exp, "data/ael/raw/")
-    sh_g, dh_g, sh_t, dh_t = data_select(sh_phi, dh_phi, sh_t, dh_t, exp=0)
+    sh_phi, dh_phi, sh_t, dh_t = data_load("data/ael/raw/", exp=exp)
+    sh_g, dh_g, sh_t, dh_t = data_select(sh_phi, dh_phi, sh_t, dh_t, exp=exp)
 
     print("selected",[x.shape for x in [sh_g, dh_g]])
 
