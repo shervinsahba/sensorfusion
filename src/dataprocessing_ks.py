@@ -1,6 +1,7 @@
 import scipy.io as sio
 import numpy as np
 import argparse
+from .tools import embed_snapshots
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -12,18 +13,6 @@ def parse_arguments():
     parser.add_argument('--label', help='label by xn or xr', nargs='?', default='xr')              
     return parser.parse_args()
 
-def stack_samples(a, b=None, embed=1):
-    """creates row-wise embeddings of 2-D data.
-    e.g. a (5,10) array with 3 embeddings returns a (15,8) array."""
-    if b is None:
-        b = a 
-    if embed > 1:
-        embed -= 1
-        a = a[1:,:]
-        b = np.hstack((b[:-1,:],a))                
-        b = stack_samples(a,b,embed)
-    return b
-
 
 def main(data,tr,xr,exp,en,label):
 
@@ -32,7 +21,7 @@ def main(data,tr,xr,exp,en,label):
     # tt = data['tt'][0,0].T
 
     # create embeddings by stacking samples and then slicing
-    dataset_x = stack_samples(uu[:,::args.xr], embed=args.en)[::args.tr,:]
+    dataset_x = embed_snapshots(uu[:,::args.xr], embed=args.en)[::args.tr,:]
     dataset_y = uu[::args.tr,:]
     # in case arrays differ in size, choose smaller and slice off excess
     n_snapshots = min(dataset_x.shape[0],dataset_y.shape[0])
