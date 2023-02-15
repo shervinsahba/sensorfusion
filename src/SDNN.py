@@ -1,34 +1,22 @@
 import numpy as np
 from torch import nn,tensor
 from torch.utils.data import TensorDataset,DataLoader
-import torch.nn.functional as F
 from .torch_boilerplate import *
 
 class SDNN(nn.Module):
-    def __init__(self,input_size,output_size,l1=1024,l2=128,d1=0.20,d2=0.00):
+    def __init__(self,input_size,output_size,l1=1024,l2=128,dp=0.20,):
         super().__init__()
-        self.input_size = input_size
-        self.output_size = output_size
-        self.l1 = l1
-        self.l2 = l2
-        self.d1 = d1
-        self.d2 = d2
         
-        self.learn_features = nn.Sequential(         
-            nn.Linear(input_size, self.l1),
+        self.layer1 = nn.Sequential(         
+            nn.Linear(input_size, l1),
             nn.ReLU(inplace=True),
-            nn.BatchNorm1d(1),
-            )
-        
-        self.learn_coef = nn.Sequential(            
-            nn.Linear(self.l1, self.l2),
+            nn.BatchNorm1d(1))
+        self.layer2 = nn.Sequential(      
+            nn.Dropout(dp),      
+            nn.Linear(l1, l2),
             nn.ReLU(inplace=True),  
-            nn.BatchNorm1d(1),  
-            )
-
-        self.learn_dictionary = nn.Sequential(
-            nn.Linear(self.l2, self.output_size),
-            )
+            nn.BatchNorm1d(1))
+        self.layer3 = nn.Linear(l2, output_size)
         
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -42,11 +30,9 @@ class SDNN(nn.Module):
                     nn.init.constant_(m.bias, 0.0)
 
     def forward(self, xb):
-        xb = self.learn_features(xb)
-        xb = F.dropout(xb, p=self.d1, training=self.training)
-        xb = self.learn_coef(xb)
-        xb = F.dropout(xb, p=self.d2, training=self.training)
-        xb = self.learn_dictionary(xb) 
+        xb = self.layer1(xb)
+        xb = self.layer2(xb)
+        xb = self.layer3(xb)
         return xb
 
 
