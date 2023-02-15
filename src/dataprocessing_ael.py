@@ -2,13 +2,15 @@ import argparse
 import numpy as np
 from collections import Counter
 import h5py
+from .tools import embed_snapshots, vectorize_frames
+
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('data', help='data types [shsh,dhdh,shdh]')
-    parser.add_argument('--tr', help='temporal sampling rate', nargs='?', default=8, type=int)
-    parser.add_argument('--xr', help='spatial sampling rate along 1st axis', nargs='?', default=3, type=int)
-    parser.add_argument('--yr', help='spatial sampling rate along 2nd axis', nargs='?', default=3, type=int)
+    parser.add_argument('data', help='data, one of [sh_sh,dh_dh,sh_dh]')
+    parser.add_argument('--tr', help='temporal sampling rate', nargs='?', default=10, type=int)
+    parser.add_argument('--xr', help='spatial sampling rate along 1st axis', nargs='?', default=5, type=int)
+    parser.add_argument('--yr', help='spatial sampling rate along 2nd axis', nargs='?', default=5, type=int)
     parser.add_argument('--exp', help='ael experiment', nargs='?', default=0, type=int)                         
     parser.add_argument('--en', help='number of embeddings', nargs='?', default=1, type=int)                       
     return parser.parse_args()
@@ -49,7 +51,6 @@ def get_matching_indices(a, b, roundto=5):
     """
     returns indices of unique matching entries between two numerical lists, a and b.
     """
-
     # round time vectors to specified decimal
     a_round = np.round(a, roundto)
     b_round = np.round(b, roundto)
@@ -61,7 +62,7 @@ def get_matching_indices(a, b, roundto=5):
     
     # combine time vectors as lists. find which times occurred in both lists.
     matches = duplicates(list(a_round) + list(b_round))
-    print(f"The number of matched times is {len(matches)}.")
+    print(f"found {len(matches)} matching times")
 
     # get the indices of the matched times for each sensor's time vector
     a_idx = [j for j,t in enumerate(a_round) if t in matches]
@@ -71,6 +72,10 @@ def get_matching_indices(a, b, roundto=5):
 
 
 def stack_indices(idx, sr):
+    """ Takes indices and inserts subsequent integers, sr times.
+    e.g. stack_indices([1,3,3,4],2) = array([1, 2, 3, 4, 3, 4, 4, 5], dtype=int32)
+    e.g. stack_indices([1,3,7],3) = array([1, 2, 3, 3, 4, 5, 7, 8, 9], dtype=int32)
+    """
     idx = np.array(idx)
     c = np.empty(idx.size * sr, dtype=np.int32)
     for s in range(sr):
@@ -78,80 +83,73 @@ def stack_indices(idx, sr):
     return c
 
 
-def stack_samples(a, b=None, embed=1):
-    """Creates row-wise embeddings of 2-D data. 
-    Each row is appended to the previous row. The final row is discarded.
-    example: inputting a (5,10) array with embed=3 returns a (3,30) array.
-    Creating temporal embeddings assumes the first dimension in the array is time."""
-    if b is None:
-        b = a  
-    if embed > 1:
-        embed -= 1
-        a = a[1:,:]
-        b = np.hstack((b[:-1,:],a))                
-        b = stack_samples(a,b,embed)
-    return b
-
-
 def main(data,tr,xr,yr,exp,en):
-
+    if data not in ["sh_sh","dh_dh","sh_dh"]:
+        raise ValueError("data needs to be one of [sh_sh,dh_dh,sh_dh]")
+    
     # Select from experiments [0,1,2,3,4]
     sh_phi, dh_phi, sh_t, dh_t = data_load(exp, "data/ael/raw/")
 
-    # trim spatial dimensions some more
+    # Trim spatial dimensions some more.
     r = 3.46              # scale ratio
-    # TODO the values really only apply to experiment 0.
-    a,b,c,d = 4,18,17,45  # region of interest on SH sensor
-    aa,bb,cc,dd = round(a*r),round(b*r),round((c-2)*r),round((d-2)*r)
-    aa,bb,cc,dd = aa,bb+2,cc,dd+3 ### for dh to dh (50,150) shape
+    # TODO these values might only apply to experiment 0.
+    a,b,c,d = 4,19,15,45  # (15,30) region of interest on SH sensor
+    aa,bb,cc,dd = map(round, r * np.array([a,b,c-2,d-2]))
     sh_g = sh_phi[:,a:b,c:d]
-    dh_g = dh_phi[:,aa:bb,cc:dd]
-    print("trimmed sh and dh",[x.shape for x in [sh_g, dh_g]])
+    dh_g = dh_phi[:,aa:bb-2,cc:dd-4]  # edit DH a bit for (50,100) shape
+
+    # make sure our arrays don't contain nans
+    if np.isnan(sh_g).any() or np.isnan(dh_g).any():
+        raise ValueError("sh_g or dh_g contains nan! choose a different region.")
+
+    # Trim dh/sh times that are out of temporal range of the sh/dh data.
+    if sh_t[-1] >= dh_t[-1]:
+        dh_t = dh_t[dh_t<=sh_t[-1]]
+        dh_g = dh_g[:len(dh_t),:,:]
+    else:
+        sh_t = sh_t[sh_t<=dh_t[-1]]
+        sh_g = sh_g[:len(sh_t),:,:]
+
+    print("selected",[x.shape for x in [sh_g, dh_g]])
 
     # select data
-    print(f"selecting data {data}")
-    if data == "sh_sh":
-        data_x = sh_g
-        data_y = data_x
-    elif data == "dh_dh":
-        data_x = dh_g
-        data_y = data_x
-    elif data == "sh_dh":
-        # there is no temporal sampling for sh_dh, so setting tr to match en
-        # will work for any embeddings later
-        tr = en  
-        # trim dh times that are out of temporal range of the sh data
-        if sh_t[-1] >= dh_t[-1]:
-            dh_t = dh_t[dh_t<=sh_t[-1]]
-            dh_g = dh_g[:len(dh_t),:,:]
-        else:
-            sh_t = sh_t[sh_t<=dh_t[-1]]
-            sh_g = sh_g[:len(sh_t),:,:]
+    dataset_x = sh_g if data in ["sh_sh","sh_dh"] else dh_g
+    dataset_y = sh_g if data in ["sh_sh"] else dh_g
+    if data == "sh_dh":
         # find matching time indices
         sh_idx, dh_idx = get_matching_indices(sh_t,dh_t,roundto=5) 
-        # create embeddings with matched times
-        dataset_x = sh_g[stack_indices(sh_idx,en),:,:]  # TODO bug that doesn't seem to affect production, but stack_indices can provide an out of range index theoretically
-        dataset_y = dh_g[dh_idx,:,:]
-        print("matched times for sh_g and dh_g",[x.shape for x in [dataset_x, dataset_y]])
 
-    if data in ["sh_sh", "dh_dh"]:
+        # create datasets with matched times and desired temporal stacking
+        dataset_x = dataset_x[stack_indices(sh_idx,en),:,:]  # TODO bug that doesn't seem to affect production: stack_indices can provide an out of range index if the end of the temporal range is used with a lot of embeddings.
+        dataset_y = dataset_y[dh_idx,:,:]
+        print(f"stacked {en}x", [x.shape for x in [dataset_x, dataset_y]])
+        
+        # The temporal embedding isn't complete here. We inserted the 
+        # needed snapshots, which multiplies the number of snapshots by en.
+        # Later we will need to append these additional snapshots to the originals,
+        # completing the embedding. This will be done by embed_snapshots,
+        # which will not only embed snapshots for each matched time, but will also
+        # embed en-1 more times than necessary.
+        #
+        # Remember there is no temporal sampling being done to sh_dh data.
+        # So we use the tr parameter to select every en snapshots, completing the
+        # embedding and retaining only the proper snapshots.
+        tr = en  
+    else:
         # subsample superset into x and y datasets
-        dataset_x = data_x[:,::xr,::yr]
-        dataset_y = data_y[::tr,:,:]
+        dataset_x = dataset_x[:,::xr,::yr]  # low spatial / high temporal resolution
+        dataset_y = dataset_y[::tr,:,:]     # high spatial/ low temporal resolution
         print("subsampled", [x.shape for x in [dataset_x, dataset_y]], 
             f"with tr={tr}, xr={xr}, yr={yr}")
 
-    # store shapes of original data for reconstruction
+    # store shapes of original datasets for reconstruction, then flatten frames to vecs
     shape_x = dataset_x.shape
     shape_y = dataset_y.shape
-
-    # flatten frames to vecs
-    dataset_x = dataset_x.reshape(dataset_x.shape[0],-1)
-    dataset_y = dataset_y.reshape(dataset_y.shape[0],-1)
+    dataset_x, dataset_y = map(vectorize_frames,[dataset_x, dataset_y])
     print("vectorized", [x.shape for x in [dataset_x, dataset_y]])
 
     # create embeddings by stacking samples and then slicing
-    dataset_x = stack_samples(dataset_x,embed=en)[::tr,:]
+    dataset_x = embed_snapshots(dataset_x,embed=en)[::tr,:]
     # in case arrays differ in size, choose smaller and slice off excess
     n_snapshots = min(dataset_x.shape[0],dataset_y.shape[0])
     dataset_x = dataset_x[:n_snapshots,:]
