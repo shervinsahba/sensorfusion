@@ -85,14 +85,13 @@ def plot_1d_results(x, y, r, t=-1, diff=True):
     im2 = ax[2].pcolormesh(r,cmap='inferno',vmin=vmin,vmax=vmax)
     if diff:
         im3 = ax[3].pcolormesh(y-r,cmap='inferno',vmin=vmin,vmax=vmax)
-    for axis,label in zip(ax,["$x$","$y$","$\hat{y}$","$\Delta$"]):
-        axis.text(1-0.140,0.9,label,fontsize=14,c='black',transform=axis.transAxes)
-        axis.text(1-0.135,0.9,label,fontsize=14,c='white',transform=axis.transAxes)
-        circle = Circle((1-0.140+0.027,0.9+0.025), radius=0.05,
-                            color='k', alpha=0.3, transform=axis.transAxes)
-        axis.add_patch(circle)
     
     # labels
+    for axis,label in zip(ax,["$X$","$Y$","$\hat{Y}$","$\Delta$"]):
+        axis.text(0.87,0.9,label,fontsize=18,c='w',transform=axis.transAxes)
+        patch = Rectangle((0.85,0.88),0.125,0.12,color='k',alpha=0.85,transform=axis.transAxes)
+        axis.add_patch(patch)
+
     for axis in ax:
         axis.set_xticks([0,ys])
     ax[0].set_xticklabels([0,xs])
@@ -100,27 +99,39 @@ def plot_1d_results(x, y, r, t=-1, diff=True):
     # ax[0].set_ylabel('t (snapshot)')
     # ax[1].set_xlabel('x (px)')
 
-    def _inset_plot(axis,p,y,ylim):
-        axins = axis.inset_axes([0,t/x.shape[0] - 0.05,1, 0.1],transform=axis.transAxes)
-        axins.plot(y,color='black')
-        axins.plot(p,color='white')
+    def _inset_style(axins):
         axins.set_facecolor('black')
-        axins.patch.set_alpha(0.2)
-        axins.set_xlim(0,ys)
-        axins.set_ylim(ylim)
+        axins.patch.set_alpha(0.4)
         axins.set_xticks([])
         axins.set_yticks([])
         axins.spines[['left','right','top','bottom']].set_visible(False)
+
+    def _inset_plot(axis,p,y,ylim):
+        axins = axis.inset_axes([0,t/x.shape[0] - 0.05,1, 0.1],transform=axis.transAxes)
+        axins.plot(y,color='tab:pink',lw=1.5)
+        axins.plot(p,color='white',lw=2.5)
+        axins.set_xlim(0,ys)
+        axins.set_ylim(ylim)
+        _inset_style(axins)
+        return axins
+
+    def _inset_plot_label(axis,text):
+        axins = axis.inset_axes([0.85,t/x.shape[0] - 0.14,0.125,0.09],transform=axis.transAxes)
+        axins.text(0.13,0.32,text,fontsize=18,color='w',transform=axins.transAxes)
+        axins.set_facecolor('black')
+        _inset_style(axins)        
         return axins
 
     # inset plots
     if t >= 0:
         ylim = (np.min(y),np.max(y))
-        for axis,p in zip(ax[:3],[x,y,r]):
+        for axis,p,label in zip(ax[:3],[x,y,r],["$x_i$","$y_i$","$\hat{y}_i$"]):
             axins = _inset_plot(axis,p[t,:],y[t,:],ylim)
-            # axis.hlines(100,xmin=0,xmax=ys,linestyles='-.',color='white')
+            axins = _inset_plot_label(axis,label)
         if diff:
             axins = _inset_plot(ax[3],y[t,:]-r[t,:],np.zeros(ys),ylim)
+            axins = _inset_plot_label(ax[3],"$\delta_i$")
+        
     return ax
 
 
@@ -148,15 +159,10 @@ def plot_2d_result(x,y,r,t=0,vmin=None,vmax=None,diff=True,apply_map=None,cbar=T
     [axis.set_aspect('equal') for axis in ax];
 
     #labels
-    for axis,label in zip(ax,["$x_i$","$y_i$","$\hat{y}_i$","$\Delta_i$"]):
-        axis.text(1-0.140,0.75,label,fontsize=14,c='black',transform=axis.transAxes)
-        axis.text(1-0.135,0.75,label,fontsize=14,c='white',transform=axis.transAxes)
-        circle = Circle((1-0.140+0.027,0.9+0.025), radius=0.05,
-                            color='k', alpha=0.3, transform=axis.transAxes)
-    # for axis,label in zip(ax,['Input Frame','Desired Frame','Result','Diff']):
-    #     axis.text(0.1,0.85,label,fontsize=11,c='white',transform=axis.transAxes)
-    #     rect = patches.Rectangle((0.00,0.85),1.0,0.10,facecolor='black', alpha=0.3, transform=axis.transAxes)
-    #     axis.add_patch(rect)
+    for axis,label in zip(ax,["$x_i$","$y_i$","$\hat{y}_i$","$\delta_i$"]):
+        axis.text(0.87,0.82,label,fontsize=18,c='w',transform=axis.transAxes)
+        patch = Rectangle((0.85,0.75),0.125,0.25,color='k',alpha=0.85,transform=axis.transAxes)
+        axis.add_patch(patch)
 
     ax[0].set_xticks([0,x.shape[1]])
     ax[0].set_yticks([0,x.shape[0]])
