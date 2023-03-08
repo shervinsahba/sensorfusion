@@ -70,7 +70,8 @@ class EarlyStopper:
 def fit(epochs, model, loss_func, opt, train_dl, valid_dl, es_patience=3, es_percent=0.01):
     
     def loss_batch(model, loss_func, xb, yb, opt=None):
-        loss = loss_func(model(xb), yb)
+        # loss = loss_func(model(xb), yb)
+        loss = loss_func(model(xb).squeeze(), yb.squeeze()) #TODO
         if opt is not None:
             loss.backward()
             opt.step()
