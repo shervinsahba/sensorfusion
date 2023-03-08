@@ -6,3 +6,6 @@ __pycache__/
 *.npy
 *.mat
 *.h5
+
+# figures, use git add --force if needed here
+figs/
