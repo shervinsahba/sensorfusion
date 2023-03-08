@@ -7,6 +7,7 @@ import torch.nn.functional as F
 from .torch_boilerplate import get_torchdevice, fit
 from .SDNN import *
 from .tools import *
+from .plots import *
 
 matplotlib_settings()
 
@@ -23,10 +24,10 @@ def parse_arguments():
     parser.add_argument('--dp', help='dropout percentage', nargs='?', default=0.3, type=float)
     parser.add_argument('--DEVRUN', help='dev mode quickrun', nargs='?', default=False, type=bool)
     parser.add_argument('--MAKEFIGS', help='toggle making figures on', nargs='?', default=True, type=bool)
-    parser.add_argument('--MAKEVIDS', help='toggle making movies on', nargs='?', default=True, type=bool)
+    parser.add_argument('--MAKEVIDS', help='toggle making movies on', nargs='?', default=False, type=bool)
     return parser.parse_args()
 
-
+@timethis
 def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp,
         DEVRUN=False,MAKEFIGS=False,MAKEVIDS=False):
 
@@ -39,7 +40,7 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp,
         xn = np.load(f)
 
     ## handle training data
-    train_x, train_y, valid_x, valid_y = dataset_split(dataset_x,dataset_y,valid_n)
+    train_x,train_y,valid_x,valid_y = dataset_split(dataset_x,dataset_y,valid_n)
     train_x,train_y,valid_x,valid_y = map(demean, [train_x,train_y,valid_x,valid_y])
     print("train_x","train_y",[x.shape for x in [train_x, train_y]])
     print("valid_x","valid_y",[x.shape for x in [valid_x, valid_y]])
@@ -49,7 +50,6 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp,
     train_dl = get_dataloader(train_x, train_y, bs,   shuffle=False)
     valid_dl = get_dataloader(valid_x, valid_y, bs*2, shuffle=True )
     model = SDNN(train_x.shape[-1], train_y.shape[-1], l1=l1, l2=l2, dp=dp).to(dev)
-    # opt = optim.SGD(model.parameters(), lr=lr, momentum=0.9)
     opt = optim.Adam(model.parameters(), lr=lr)
     loss_func = F.mse_loss
     if DEVRUN: 
@@ -63,22 +63,27 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp,
     print(f"train_loss: {train_loss}")
     print(f"valid_loss: {valid_loss}")
 
-    ## setup for figs or vids
-    figbasename = Path(datafile).stem
-    mkdir_figs_vids()
-
     if MAKEFIGS:  
-        pn = max(500,valid_n)  # number of snapshots to plot
-        t = pn * 3//5          # pick a snapshot to plot about 0.6 up the plot, aesthetically speaking
+        ## setup for figs or vids
+        figbasename = Path(datafile).stem
+        mkdir_figs_vids()
+
+        pn = min(500,valid_n)  # number of snapshots to plot
+        t = pn * 3//5          # pick a snapshot to plot about 0.6 up the plot, for aesthetics
+        
         plot_1d_results(train_x[:pn,:xn], train_y[:pn,:], train_r[:pn,:], t=t)
-        plt.savefig(f"figs/{figbasename}_train_{l1}_{l2}.png", transparent=False)
+        plt.savefig(f"figs/{figbasename}_train_{l1}_{l2}.png",
+            transparent=False, bbox_inches='tight', dpi=300)
             
         plot_1d_results(valid_x[:pn,:xn], valid_y[:pn,:], valid_r[:pn,:], t=t)
-        plt.savefig(f"figs/{figbasename}_valid_{l1}_{l2}.png", transparent=False)
+        plt.savefig(f"figs/{figbasename}_valid_{l1}_{l2}.png",
+            transparent=False, bbox_inches='tight', dpi=300)
 
         if MAKEVIDS:
-            # TODO. There are no vids yet.
-            pass
+            print("Making video...")
+            f = lambda t: plot_1d_results(valid_x[:pn,:xn], valid_y[:pn,:], valid_r[:pn,:], t=t)
+            generate_video(f, round(pn*0.95), start=round(pn*0.05),
+                directory='figs/vids', filename=f"{figbasename}_valid")
 
     return (train_x, train_y, train_r), (valid_x, valid_y, valid_r)
 
