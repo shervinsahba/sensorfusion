@@ -1,8 +1,7 @@
 import argparse
 import numpy as np
-from collections import Counter
 import h5py
-from .tools import embed_snapshots, vectorize_frames
+from .tools import *
 
 
 def parse_arguments():
@@ -26,6 +25,11 @@ def data_load(directory, exp=0):
     sh_phi = h5f['sh_phi'][:][4:-2,2:,:]
     dh_phi = h5f['dh_phi'][:][3:158,2:-1,:]
     
+    # the SH array has measurements surrounded by zeros
+    # the DH array has measurements surrounded by nans
+    # lets make sure we ONLY keep measurements as non-nans
+    sh_phi = np.where(sh_phi == 0, np.nan, sh_phi)
+
     # flip frame so it plots with the edge on the bottom
     sh_phi, dh_phi = map(np.flipud, [sh_phi,dh_phi])
     # move time axis to first position
@@ -43,11 +47,26 @@ def data_load(directory, exp=0):
 def data_select(sh_phi, dh_phi, sh_t, dh_t, exp=0):
     # Trim spatial dimensions some more.
     r = 3.46              # scale ratio
-    # TODO these values might only apply to experiment 0.
-    a,b,c,d = 4,19,15,45  # (15,30) region of interest on SH sensor
-    aa,bb,cc,dd = map(round, r * np.array([a,b,c-2,d-2]))
+    
+    # select SH sensor region
+    if exp in [0, 3]:
+        a,b,c,d = 4,19,15,45  # 30 x 15 region of interest on SH sensor
+    elif exp == 1:
+        a,b,c,d = 18,32,17,31 # 14 x 14 region of windowed SH
+    elif exp == 2:
+        a,b,c,d = 18,29,10,38 # 28 x 11 region of windowed SH
+    else:
+        raise NotImplementedError("Data selection only supported for experiments 0,1,2,3 at this time.")
     sh_g = sh_phi[:,a:b,c:d]
-    dh_g = dh_phi[:,aa:bb-2,cc:dd-4]  # edit DH a bit for (50,100) shape
+    
+    # select DH sensor region
+    aa,bb,cc,dd = map(round, r * np.array([a,b,c-2,d-2]))
+    if exp in [0,3]:
+        dh_g = dh_phi[:,aa:bb-2,cc:dd-4]  # edited DH for (50,100) shape 
+    elif exp == 1:
+        dh_g = dh_phi[:,aa:bb-1,cc:dd]  # edited to keep square shape
+    else:
+        dh_g = dh_phi[:,aa:bb,cc:dd]
 
     # make sure our arrays don't contain nans
     if np.isnan(sh_g).any() or np.isnan(dh_g).any():
@@ -60,39 +79,8 @@ def data_select(sh_phi, dh_phi, sh_t, dh_t, exp=0):
     else:
         sh_t = sh_t[sh_t<=dh_t[-1]]
         sh_g = sh_g[:len(sh_t),:,:]
-    
+
     return sh_g, dh_g, sh_t, dh_t
-
-
-def duplicates(x):
-    """
-    returns a list of duplicate entries in a list
-    """
-    return [k for (k,v) in Counter(list(x)).items() if v > 1]
-
-
-def get_matching_indices(a, b, roundto=5):
-    """
-    returns indices of unique matching entries between two numerical lists, a and b.
-    """
-    # round time vectors to specified decimal
-    a_round = np.round(a, roundto)
-    b_round = np.round(b, roundto)
-
-    # make sure all times are unique within each vector
-    if duplicates(a_round) or duplicates(b_round):
-        print("warning: there are duplicate entries within each vector, \
-        possibly from excess rounding.")
-    
-    # combine time vectors as lists. find which times occurred in both lists.
-    matches = duplicates(list(a_round) + list(b_round))
-    print(f"found {len(matches)} matching times")
-
-    # get the indices of the matched times for each sensor's time vector
-    a_idx = [j for j,t in enumerate(a_round) if t in matches]
-    b_idx = [j for j,t in enumerate(b_round) if t in matches]
-
-    return a_idx, b_idx
 
 
 def stack_indices(idx, sr):
@@ -108,7 +96,7 @@ def stack_indices(idx, sr):
 
 
 def main(data,tr,xr,yr,exp,en):
-    if data not in ["sh_sh","dh_dh","sh_dh"]:
+    if data not in ["sh_sh","dh_dh","sh_dh","sh_dh_matched"]:
         raise ValueError("data needs to be one of [sh_sh,dh_dh,sh_dh]")
     
     # Select from experiments [0,1,2,3,4]
@@ -118,7 +106,7 @@ def main(data,tr,xr,yr,exp,en):
     print("selected",[x.shape for x in [sh_g, dh_g]])
 
     # select data
-    dataset_x = sh_g if data in ["sh_sh","sh_dh"] else dh_g
+    dataset_x = sh_g if data in ["sh_sh","sh_dh","sh_dh_matched"] else dh_g
     dataset_y = sh_g if data in ["sh_sh"] else dh_g
     if data == "sh_dh":
         # find matching time indices
@@ -139,7 +127,12 @@ def main(data,tr,xr,yr,exp,en):
         # Remember there is no temporal sampling being done to sh_dh data.
         # So we use the tr parameter to select every en snapshots, completing the
         # embedding and retaining only the proper snapshots.
-        tr = en  
+        tr = en
+    elif data == "sh_dh_matched":
+        idx_match = matching_search(dh_t,sh_t)
+        dataset_y = dataset_y[idx_match,:,:]
+        print("matched", [x.shape for x in [dataset_x, dataset_y]])
+        tr = 1  # no temporal slicing!
     else:
         # subsample superset into x and y datasets
         dataset_x = dataset_x[:,::xr,::yr]  # low spatial / high temporal resolution
@@ -165,6 +158,8 @@ def main(data,tr,xr,yr,exp,en):
     if data in ["sh_sh", "dh_dh"]:
         filename = f'data/ael/{data}_exp{exp}_tr{tr}_xr{xr}_yr{yr}_en{en}.npy'
     elif data == "sh_dh":
+        filename = f'data/ael/{data}_exp{exp}_en{en}.npy'
+    elif data == "sh_dh_matched":
         filename = f'data/ael/{data}_exp{exp}_en{en}.npy'
     with open(filename, 'wb') as f:
         np.save(f, dataset_x)

@@ -27,8 +27,7 @@
         lr: 0.001
         l1: 8192
         l2: 64
-        d1: 0.3
-        d2: 0.0
+        dp: 0.3
 
 
 - model: sh_sh
@@ -60,8 +59,7 @@
         lr: 0.0025
         l1: 8192
         l2: 256
-        d1: 0.3
-        d2: 0.0
+        dp: 0.3
 
 
 - model: dh_dh
@@ -84,6 +82,9 @@
         - file: data/ael/dh_dh_exp0_tr5_xr5_yr5_en1.npy
           target-path: data/ael
           target-type: link
+        - file: data/ael/dh_dh_exp0_tr8_xr5_yr5_en1.npy
+          target-path: data/ael
+          target-type: link
         - file: figs
           target-type: link
       main: src.fusion2d
@@ -102,8 +103,7 @@
         lr: 1e-4
         l1: 2759
         l2: 296
-        d1: 0.3
-        d2: 0.0
+        dp: 0.3
 
 
 - model: sh_dh
@@ -138,5 +138,39 @@
         lr: 0.03
         l1: 8192
         l2: 512
-        d1: 0.3
-        d2: 0.0
+        dp: 0.3
+
+
+- model: sh_dh_matched
+  operations:
+    train:
+      sourcecode:
+        - exclude: '*.ipynb'
+        - exclude: '*.md'
+        - exclude: '.git*'
+      requires:
+        - file: data/ael/sh_dh_matched_exp0_en1.npy
+          target-path: data/ael
+          target-type: link
+        - file: data/ael/sh_dh_matched_exp2_en1.npy
+          target-path: data/ael
+          target-type: link
+        - file: figs
+          target-type: link
+      main: src.fusion2d
+      output-scalars:
+        - step: 'epoch: (\step)'
+        - train_loss: 'train_loss: (\value)'
+        - loss: 'valid_loss: (\value)'
+      flags:
+        datafile: 'sh_dh_matched_exp0_en1.npy'
+        DEVRUN: False
+        MAKEFIGS: True
+        MAKEVIDS: True
+        valid_n: 1000
+        epochs: 5000
+        bs: 256
+        lr: 0.01
+        l1: 8192
+        l2: 256
+        dp: 0.4
