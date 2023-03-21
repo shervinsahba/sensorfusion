@@ -107,8 +107,8 @@ def main(datafile,valid_n,epochs,bs,lr,l1,l2,dp,
         if MAKEVIDS:
             f = lambda t: plot_2d_result(*data_train,t=t,vmin=vmin,vmax=vmax)
             g = lambda t: plot_2d_result(*data_valid,t=t,vmin=vmin,vmax=vmax)
-            generate_video(f,50,'figs/vids/',framerate=6,filename=f"{figbasename}_train_{l1}_{l2}")
-            generate_video(g,50,'figs/vids/',framerate=6,filename=f"{figbasename}_valid_{l1}_{l2}")
+            generate_video(f,50,start=0,directory='figs/vids/',framerate=6,filename=f"{figbasename}_train_{l1}_{l2}")
+            generate_video(g,50,start=0,directory='figs/vids/',framerate=6,filename=f"{figbasename}_valid_{l1}_{l2}")
 
     return data_train, data_valid
 
