@@ -1,15 +1,8 @@
-import numpy as np
-# import os
-# from pathlib import Path
 from collections import Counter
+from pathlib import Path
+import numpy as np
 import functools
-# import glob
-# import subprocess
 import time
-# import matplotlib.pyplot as plt
-# from matplotlib.patches import Rectangle, Circle, ConnectionPatch
-# from matplotlib.ticker import AutoMinorLocator
-
 
 ## decorators
 
@@ -100,6 +93,20 @@ def expand_hack(x, y, z=None, gap=1e-3):
     return x1, y1
 
 
+def load_data(datafile: str, datadir: str) -> tuple:
+    """Load data from file."""
+    data_path = Path(f"{datadir}{datafile}")
+    if not data_path.exists():
+        raise FileNotFoundError(f"{data_path} does not exist")
+    with open(data_path, 'rb') as f:
+        dataset_x = np.load(f)
+        dataset_y = np.load(f)
+        shape_x = np.load(f)
+        shape_y = np.load(f)
+        en = np.load(f)
+    return dataset_x, dataset_y, shape_x, shape_y, en
+
+
 def matching_search_unique(a, b, roundto=5):
     """
     returns indices of unique matching entries between two numerical lists, a and b.
@@ -163,6 +170,15 @@ def mse_snapshots(a,b,axis=1):
     return np.mean((a-b)**2,axis=axis)
 
 
+def prepare_data(dataset_x: np.ndarray, dataset_y: np.ndarray, valid_n: int) -> tuple:
+    """Split and normalize datasets."""
+    train_x, train_y, valid_x, valid_y = dataset_split(dataset_x, dataset_y, valid_n)
+    train_x, train_y, valid_x, valid_y = map(demean, [train_x, train_y, valid_x, valid_y])
+    print("train_x","train_y", [x.shape for x in [train_x, train_y]])
+    print("valid_x","valid_y", [x.shape for x in [valid_x, valid_y]])
+    return train_x, train_y, valid_x, valid_y
+
+
 def psd2(data, fftshift=True, log=True):
     """Compute 2D power spectrum for an n x m array 
     or a t x n x m time series of (n x m) arrays.
@@ -204,4 +220,21 @@ def radial_psd(image, r=None, log=True, origin='center'):
     return radial_mean(psd, r=r, origin=origin)
 
 
+def reshape_2d_data(train_x: np.ndarray, train_y: np.ndarray, train_r: np.ndarray,
+                 valid_x: np.ndarray, valid_y: np.ndarray, valid_r: np.ndarray,
+                 en: int, shape_x: tuple, shape_y: tuple) -> tuple:
+    """Reshape data and unstack training set."""
+    train_x = train_x[:, :train_x.shape[1] // en]
+    valid_x = valid_x[:, :valid_x.shape[1] // en]
+    data_train = [
+        train_x.reshape(-1, *shape_x[1:]),
+        train_y.reshape(-1, *shape_y[1:]),
+        train_r.reshape(-1, *shape_y[1:])
+    ]
+    data_valid = [
+        valid_x.reshape(-1, *shape_x[1:]),
+        valid_y.reshape(-1, *shape_y[1:]),
+        valid_r.reshape(-1, *shape_y[1:])
+    ]
 
+    return data_train, data_valid
