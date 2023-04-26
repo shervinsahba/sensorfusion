@@ -16,18 +16,18 @@ def parse_arguments():
 
 def main(data,tr,xr,exp,en,label):
 
-    data = sio.loadmat(data)['data']
-    uu = data['uu'][0,0].T
+    simulation_data = sio.loadmat(data)['data']
+    uu = simulation_data['uu'][0,0].T
     # tt = data['tt'][0,0].T
 
     # subsample superset into x and y datasets
-    dataset_x = uu[:,::args.xr]
-    dataset_y = uu[::args.tr,:]
+    dataset_x = uu[:,::xr]
+    dataset_y = uu[::tr,:]
     shape_x = dataset_x.shape
     shape_y = dataset_y.shape
 
     # create embeddings by stacking samples and then slicing
-    dataset_x = embed_snapshots(dataset_x, embed=args.en)[::args.tr,:]
+    dataset_x = embed_snapshots(dataset_x, embed=en)[::tr,:]
     
     # in case arrays differ in size, choose smaller and slice off excess
     n_snapshots = min(dataset_x.shape[0],dataset_y.shape[0])
@@ -36,11 +36,11 @@ def main(data,tr,xr,exp,en,label):
     print("embeddings", [x.shape for x in [dataset_x, dataset_y]])
 
     # save dataset
-    # xn = uu.shape[1]// args.xr   # low spatial resolution
-    if args.label == 'xn':
-        filename = f'data/ks/ks_tr{args.tr}_xn{xn}_en{args.en}.npy'
-    elif args.label == 'xr':
-        filename = f'data/ks/ks_tr{args.tr}_xr{args.xr}_en{args.en}.npy'
+    filename_formats = {
+        'xn': f'data/ks/ks_tr{tr}_xn{dataset_x.shape[1]}_en{en}.npy',
+        'xr': f'data/ks/ks_tr{tr}_xr{xr}_en{en}.npy'
+    }
+    filename = filename_formats[label]
     with open(filename, 'wb') as f:
         np.save(f, dataset_x)
         np.save(f, dataset_y)
