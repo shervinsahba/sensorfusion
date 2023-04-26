@@ -5,12 +5,7 @@
         - exclude: '*.ipynb'
         - exclude: '*.md'
         - exclude: '.git*'
-      requires:
-        - file: data/ks/ks_tr8_xr64_en1.npy
-          target-path: data/ks
-          target-type: link
-        - file: figs
-          target-type: link
+      requires: data
       main: src.fusion1d
       output-scalars:
         - step: 'epoch: (\step)'
@@ -18,9 +13,9 @@
         - loss: 'valid_loss: (\value)'
       flags:
         datafile: 'ks_tr8_xr64_en1.npy'
-        DEVRUN: False
-        MAKEFIGS: True
-        MAKEVIDS: True
+        devrun: False
+        makefigs: True
+        makevids: True
         valid_n: 2000
         epochs: 80
         bs: 128
@@ -28,7 +23,12 @@
         l1: 8192
         l2: 64
         dp: 0.3
-
+  resources:
+    data:
+      - file: './data/ks/'
+        select: '.*\.npy'
+        target-type: link
+        target-path: 'data/ks' 
 
 - model: sh_sh
   operations:
@@ -37,12 +37,7 @@
         - exclude: '*.ipynb'
         - exclude: '*.md'
         - exclude: '.git*'
-      requires:
-        - file: data/ael/sh_sh_exp0_tr8_xr3_yr3_en1.npy
-          target-path: data/ael
-          target-type: link
-        - file: figs
-          target-type: link
+      requires: data
       main: src.fusion2d
       output-scalars:
         - step: 'epoch: (\step)'
@@ -50,9 +45,9 @@
         - loss: 'valid_loss: (\value)'
       flags:
         datafile: 'sh_sh_exp0_tr8_xr3_yr3_en1.npy'
-        DEVRUN: False
-        MAKEFIGS: True
-        MAKEVIDS: True
+        devrun: False
+        makefigs: True
+        makevids: True
         valid_n: 500
         epochs: 500
         bs: 64
@@ -60,6 +55,12 @@
         l1: 8192
         l2: 256
         dp: 0.3
+  resources:
+    data:
+      - file: './data/ael/'
+        select: 'sh_sh.*\.npy'
+        target-type: link
+        target-path: 'data/ael' 
 
 
 - model: dh_dh
@@ -69,34 +70,17 @@
         - exclude: '*.ipynb'
         - exclude: '*.md'
         - exclude: '.git*'
-      requires:
-        - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en1.npy
-          target-path: data/ael
-          target-type: link
-        - file: data/ael/dh_dh_exp0_tr8_xr3_yr3_en2.npy
-          target-path: data/ael
-          target-type: link
-        - file: data/ael/dh_dh_exp0_tr8_xr10_yr10_en1.npy
-          target-path: data/ael
-          target-type: link
-        - file: data/ael/dh_dh_exp0_tr5_xr5_yr5_en1.npy
-          target-path: data/ael
-          target-type: link
-        - file: data/ael/dh_dh_exp0_tr8_xr5_yr5_en1.npy
-          target-path: data/ael
-          target-type: link
-        - file: figs
-          target-type: link
+      requires: data
       main: src.fusion2d
       output-scalars:
         - step: 'epoch: (\step)'
         - train_loss: 'train_loss: (\value)'
         - loss: 'valid_loss: (\value)'
       flags:
-        datafile: 'dh_dh_exp0_tr8_xr3_yr3_en1.npy'
-        DEVRUN: False
-        MAKEFIGS: True
-        MAKEVIDS: True
+        datafile: 'dh_dh_exp0_tr8_xr5_yr5_en1.npy'
+        devrun: False
+        makefigs: True
+        makevids: True
         valid_n: 500
         epochs: 3000
         bs: 512
@@ -104,6 +88,12 @@
         l1: 2759
         l2: 296
         dp: 0.3
+  resources:
+    data:
+      - file: './data/ael/'
+        select: 'dh_dh.*\.npy'
+        target-type: link
+        target-path: 'data/ael'  # if this is absent, they will be placed under top level of run directory
 
 
 - model: sh_dh
@@ -113,15 +103,7 @@
         - exclude: '*.ipynb'
         - exclude: '*.md'
         - exclude: '.git*'
-      requires:
-        - file: data/ael/sh_dh_exp0_en1.npy
-          target-path: data/ael
-          target-type: link
-        - file: data/ael/sh_dh_exp0_en2.npy
-          target-path: data/ael
-          target-type: link
-        - file: figs
-          target-type: link
+      requires: data
       main: src.fusion2d
       output-scalars:
         - step: 'epoch: (\step)'
@@ -129,16 +111,23 @@
         - loss: 'valid_loss: (\value)'
       flags:
         datafile: 'sh_dh_exp0_en1.npy'
-        DEVRUN: False
-        MAKEFIGS: True
-        MAKEVIDS: True
+        devrun: False
+        makefigs: True
+        makevids: True
         valid_n: 500
         epochs: 5000
-        bs: 64
-        lr: 0.03
+        bs: 256
+        lr: 0.01
         l1: 8192
-        l2: 512
-        dp: 0.3
+        l2: 256
+        dp: 0.4
+  resources:
+    data:
+      - file: './data/ael/'
+        select:
+          - 'sh_dh.*\.npy' # regex pattern
+        target-type: link
+        target-path: 'data/ael' 
 
 
 - model: sh_dh_matched
@@ -148,15 +137,7 @@
         - exclude: '*.ipynb'
         - exclude: '*.md'
         - exclude: '.git*'
-      requires:
-        - file: data/ael/sh_dh_matched_exp0_en1.npy
-          target-path: data/ael
-          target-type: link
-        - file: data/ael/sh_dh_matched_exp2_en1.npy
-          target-path: data/ael
-          target-type: link
-        - file: figs
-          target-type: link
+      requires: data
       main: src.fusion2d
       output-scalars:
         - step: 'epoch: (\step)'
@@ -164,13 +145,20 @@
         - loss: 'valid_loss: (\value)'
       flags:
         datafile: 'sh_dh_matched_exp0_en1.npy'
-        DEVRUN: False
-        MAKEFIGS: True
-        MAKEVIDS: True
-        valid_n: 1000
+        devrun: False
+        makefigs: True
+        makevids: True
+        valid_n: 500
         epochs: 5000
         bs: 256
         lr: 0.01
         l1: 8192
         l2: 256
         dp: 0.4
+  resources:
+    data:
+      - file: './data/ael/'
+        select:
+          - 'sh_dh_matched.*\.npy' # regex pattern
+        target-type: link
+        target-path: 'data/ael' 
