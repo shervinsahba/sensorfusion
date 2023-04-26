@@ -20,9 +20,15 @@ def main(data,tr,xr,exp,en,label):
     uu = data['uu'][0,0].T
     # tt = data['tt'][0,0].T
 
-    # create embeddings by stacking samples and then slicing
-    dataset_x = embed_snapshots(uu[:,::args.xr], embed=args.en)[::args.tr,:]
+    # subsample superset into x and y datasets
+    dataset_x = uu[:,::args.xr]
     dataset_y = uu[::args.tr,:]
+    shape_x = dataset_x.shape
+    shape_y = dataset_y.shape
+
+    # create embeddings by stacking samples and then slicing
+    dataset_x = embed_snapshots(dataset_x, embed=args.en)[::args.tr,:]
+    
     # in case arrays differ in size, choose smaller and slice off excess
     n_snapshots = min(dataset_x.shape[0],dataset_y.shape[0])
     dataset_x = dataset_x[:n_snapshots,:]
@@ -30,7 +36,7 @@ def main(data,tr,xr,exp,en,label):
     print("embeddings", [x.shape for x in [dataset_x, dataset_y]])
 
     # save dataset
-    xn = uu.shape[1]// args.xr   # low spatial resolution
+    # xn = uu.shape[1]// args.xr   # low spatial resolution
     if args.label == 'xn':
         filename = f'data/ks/ks_tr{args.tr}_xn{xn}_en{args.en}.npy'
     elif args.label == 'xr':
@@ -38,7 +44,9 @@ def main(data,tr,xr,exp,en,label):
     with open(filename, 'wb') as f:
         np.save(f, dataset_x)
         np.save(f, dataset_y)
-        np.save(f, xn)
+        np.save(f, shape_x)
+        np.save(f, shape_y)
+        np.save(f, en)
     print(f"saved {filename}")    
 
 
