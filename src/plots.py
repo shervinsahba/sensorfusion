@@ -89,7 +89,7 @@ def generate_video(plot_function,t_max,start=0,directory='figs',filename='out',
         subprocess.call(['rm']+glob.glob(f"{Path(directory,tmp)}*.png"))
 
 
-def plot_1d_results(x, y, r, t=None, diff=True, cmap='inferno', fig=None, ax=None):
+def plot_1d_results(x, y, r, t=None, diff=False, cmap='inferno', fig=None, ax=None):
     xs = x.shape[1]
     ys = y.shape[1]
     data = [np.repeat(x,ys//xs,axis=1), y, r]
@@ -142,7 +142,7 @@ def plot_1d_results(x, y, r, t=None, diff=True, cmap='inferno', fig=None, ax=Non
     return fig, ax
 
 
-def plot_2d_result(x, y, r, t=0, vmin=None, vmax=None, diff=True, apply_map=None, cbar=True):
+def plot_2d_result(x, y, r, t=0, vmin=None, vmax=None, diff=False, apply_map=None, cbar=True):
     data = [x[t,:,:], y[t,:,:], r[t,:,:]]
     labels = ["$x_i$","$y_i$","$\hat{y}_i$"]
     if diff:
@@ -192,15 +192,15 @@ def plot_psd(data):
     # plotting setup
     labels = ['$x_i$', '$y_i$', '$\hat{y}_i$']
     colors = ['tab:blue', 'tab:orange', 'tab:purple']
-    xlim = rpsds[1].shape[1]
     rlim = data[1].shape[1] // 2
 
     for p,c,label in zip(rpsds,colors,labels):
+        xlim = p.shape[1]
         axbig.fill_between(range(xlim),p.min(axis=0),p.max(axis=0),color=c,alpha=0.2)
         axbig.plot(p.mean(axis=0),':',color=c,lw=2,ms=4)
         axbig.plot(p.mean(axis=0)[:rlim],color=c,lw=2,ms=4,label=label)    
     axbig.set_xlim([0,xlim])
-    axbig.set_ylim([np.min(rpsds),np.max(rpsds)])
+    axbig.set_ylim([min(np.min(p) for p in rpsds), max(np.max(p) for p in rpsds)])
     axbig.set_xlabel('r',labelpad=-10)
     axbig.set_ylabel('$\overline{\log \mathrm{PSD}_r}$', labelpad=-5)
     axbig.legend()
