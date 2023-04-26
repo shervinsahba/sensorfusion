@@ -1,28 +1,29 @@
-- model: ks
+# guild.ai config
+#
+# See https://my.guild.ai/t/guild-ai-documentation/ for guild
+# and https://my.guild.ai/t/guild-files for guild file details.
+
+- config: model-base
   operations:
     train:
+      main: src.fusion2d
       sourcecode:
-        - exclude: '*.ipynb'
-        - exclude: '*.md'
-        - exclude: '.git*'
+        - exclude: 
+            ['*.csv', '*.ipynb', '.git*', '*.md']
+        - exclude:
+            dir: [src/__pycache__, data, figs]
       requires: data
-      main: src.fusion1d
       output-scalars:
         - step: 'epoch: (\step)'
         - train_loss: 'train_loss: (\value)'
         - loss: 'valid_loss: (\value)'
-      flags:
-        datafile: 'ks_tr8_xr64_en1.npy'
-        devrun: False
-        makefigs: True
-        makevids: True
-        valid_n: 2000
-        epochs: 80
-        bs: 128
-        lr: 0.001
-        l1: 8192
-        l2: 64
-        dp: 0.3
+      flags-import: all
+
+- model: ks
+  extends: model-base
+  operations:
+    train:
+      main: src.fusion1d
   resources:
     data:
       - file: './data/ks/'
@@ -31,30 +32,7 @@
         target-path: 'data/ks' 
 
 - model: sh_sh
-  operations:
-    train:
-      sourcecode:
-        - exclude: '*.ipynb'
-        - exclude: '*.md'
-        - exclude: '.git*'
-      requires: data
-      main: src.fusion2d
-      output-scalars:
-        - step: 'epoch: (\step)'
-        - train_loss: 'train_loss: (\value)'
-        - loss: 'valid_loss: (\value)'
-      flags:
-        datafile: 'sh_sh_exp0_tr8_xr3_yr3_en1.npy'
-        devrun: False
-        makefigs: True
-        makevids: True
-        valid_n: 500
-        epochs: 500
-        bs: 64
-        lr: 0.0025
-        l1: 8192
-        l2: 256
-        dp: 0.3
+  extends: model-base
   resources:
     data:
       - file: './data/ael/'
@@ -62,103 +40,29 @@
         target-type: link
         target-path: 'data/ael' 
 
-
 - model: dh_dh
-  operations:
-    train:
-      sourcecode:
-        - exclude: '*.ipynb'
-        - exclude: '*.md'
-        - exclude: '.git*'
-      requires: data
-      main: src.fusion2d
-      output-scalars:
-        - step: 'epoch: (\step)'
-        - train_loss: 'train_loss: (\value)'
-        - loss: 'valid_loss: (\value)'
-      flags:
-        datafile: 'dh_dh_exp0_tr8_xr5_yr5_en1.npy'
-        devrun: False
-        makefigs: True
-        makevids: True
-        valid_n: 500
-        epochs: 3000
-        bs: 512
-        lr: 1e-4
-        l1: 2759
-        l2: 296
-        dp: 0.3
+  extends: model-base
   resources:
     data:
       - file: './data/ael/'
         select: 'dh_dh.*\.npy'
         target-type: link
-        target-path: 'data/ael'  # if this is absent, they will be placed under top level of run directory
-
+        target-path: 'data/ael'
 
 - model: sh_dh
-  operations:
-    train:
-      sourcecode:
-        - exclude: '*.ipynb'
-        - exclude: '*.md'
-        - exclude: '.git*'
-      requires: data
-      main: src.fusion2d
-      output-scalars:
-        - step: 'epoch: (\step)'
-        - train_loss: 'train_loss: (\value)'
-        - loss: 'valid_loss: (\value)'
-      flags:
-        datafile: 'sh_dh_exp0_en1.npy'
-        devrun: False
-        makefigs: True
-        makevids: True
-        valid_n: 500
-        epochs: 5000
-        bs: 256
-        lr: 0.01
-        l1: 8192
-        l2: 256
-        dp: 0.4
+  extends: model-base
   resources:
     data:
       - file: './data/ael/'
-        select:
-          - 'sh_dh.*\.npy' # regex pattern
+        select: 'sh_dh.*\.npy'
         target-type: link
         target-path: 'data/ael' 
 
-
 - model: sh_dh_matched
-  operations:
-    train:
-      sourcecode:
-        - exclude: '*.ipynb'
-        - exclude: '*.md'
-        - exclude: '.git*'
-      requires: data
-      main: src.fusion2d
-      output-scalars:
-        - step: 'epoch: (\step)'
-        - train_loss: 'train_loss: (\value)'
-        - loss: 'valid_loss: (\value)'
-      flags:
-        datafile: 'sh_dh_matched_exp0_en1.npy'
-        devrun: False
-        makefigs: True
-        makevids: True
-        valid_n: 500
-        epochs: 5000
-        bs: 256
-        lr: 0.01
-        l1: 8192
-        l2: 256
-        dp: 0.4
+  extends: model-base
   resources:
     data:
       - file: './data/ael/'
-        select:
-          - 'sh_dh_matched.*\.npy' # regex pattern
+        select: 'sh_dh_matched.*\.npy'
         target-type: link
         target-path: 'data/ael' 
