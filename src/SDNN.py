@@ -1,6 +1,6 @@
 import numpy as np
 from torch import nn, tensor
-from torch.utils.data import TensorDataset,DataLoader
+from torch.utils.data import TensorDataset, DataLoader
 from .torch_boilerplate import *
 
 class SDNN(nn.Module):
