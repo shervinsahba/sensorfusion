@@ -6,11 +6,11 @@ from .tools import *
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
-    parser.add_argument('data', help='data, one of [sh_sh,dh_dh,sh_dh]')
+    parser.add_argument('data', help='data, one of [sh_sh, dh_dh, sh_dh, sh_dh_matched]')
+    parser.add_argument('--exp', help='ael experiment', nargs='?', default=0, type=int)
     parser.add_argument('--tr', help='temporal sampling rate', nargs='?', default=10, type=int)
     parser.add_argument('--xr', help='spatial sampling rate along 1st axis', nargs='?', default=5, type=int)
     parser.add_argument('--yr', help='spatial sampling rate along 2nd axis', nargs='?', default=5, type=int)
-    parser.add_argument('--exp', help='ael experiment', nargs='?', default=0, type=int)                         
     parser.add_argument('--en', help='number of embeddings', nargs='?', default=1, type=int)                       
     return parser.parse_args()
 
@@ -97,7 +97,7 @@ def stack_indices(idx, sr):
 
 def main(data,tr,xr,yr,exp,en):
     if data not in ["sh_sh","dh_dh","sh_dh","sh_dh_matched"]:
-        raise ValueError("data needs to be one of [sh_sh,dh_dh,sh_dh]")
+        raise ValueError("data needs to be one of [sh_sh, dh_dh, sh_dh, sh_dh_matched]")
     
     # Select from experiments [0,1,2,3,4]
     sh_phi, dh_phi, sh_t, dh_t = data_load("data/ael/raw/", exp=exp)
@@ -110,7 +110,7 @@ def main(data,tr,xr,yr,exp,en):
     dataset_y = sh_g if data in ["sh_sh"] else dh_g
     if data == "sh_dh":
         # find matching time indices
-        sh_idx, dh_idx = get_matching_indices(sh_t,dh_t,roundto=5) 
+        sh_idx, dh_idx = matching_search_unique(sh_t,dh_t,roundto=5) 
 
         # create datasets with matched times and desired temporal stacking
         dataset_x = dataset_x[stack_indices(sh_idx,en),:,:]  # TODO bug that doesn't seem to affect production: stack_indices can provide an out of range index if the end of the temporal range is used with a lot of embeddings.
@@ -129,7 +129,7 @@ def main(data,tr,xr,yr,exp,en):
         # embedding and retaining only the proper snapshots.
         tr = en
     elif data == "sh_dh_matched":
-        idx_match = matching_search(dh_t,sh_t)
+        idx_match = matching_search_nearby(dh_t,sh_t)
         dataset_y = dataset_y[idx_match,:,:]
         print("matched", [x.shape for x in [dataset_x, dataset_y]])
         tr = 1  # no temporal slicing!
@@ -166,6 +166,7 @@ def main(data,tr,xr,yr,exp,en):
         np.save(f, dataset_y)
         np.save(f, shape_x)
         np.save(f, shape_y)
+        np.save(f, en)
     print(f"saved {filename}")
 
 

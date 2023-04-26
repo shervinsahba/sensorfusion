@@ -100,7 +100,7 @@ def expand_hack(x, y, z=None, gap=1e-3):
     return x1, y1
 
 
-def get_matching_indices(a, b, roundto=5):
+def matching_search_unique(a, b, roundto=5):
     """
     returns indices of unique matching entries between two numerical lists, a and b.
     """
@@ -124,7 +124,7 @@ def get_matching_indices(a, b, roundto=5):
     return a_idx, b_idx
 
 
-def matching_search(x,y):
+def matching_search_nearby(x,y):
     """For each element of y, return the indices of the closest values in x.
 
     Args:
