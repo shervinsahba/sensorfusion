@@ -9,3 +9,4 @@ __pycache__/
 
 # figures, use git add --force if needed here
 figs/
+*.code-workspace
