@@ -1,22 +1,21 @@
 import argparse
-import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
 from .plots import matplotlib_settings, generate_video, mkdir_figs_vids, plot_1d_results
 from .SDNN import train_model, evaluate_model
-from .tools import load_data, prepare_data
+from .tools import load_data, prepare_data, reshape_1d_data
 
 def parse_arguments() -> argparse.Namespace:
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser()
     parser.add_argument('--datafile', type=str, help='data.npy')
-    parser.add_argument('--valid_n', type=int, nargs='?', default=2000, help='n validation snapshots')
-    parser.add_argument('--epochs', type=int, nargs='?', default=80, help='training steps')
+    parser.add_argument('--valid_n', type=int, nargs='?', default=500, help='n validation snapshots')
+    parser.add_argument('--epochs', type=int, nargs='?', default=100, help='training steps')
     parser.add_argument('--bs', type=int, nargs='?', default=128, help='batch size')
-    parser.add_argument('--lr', type=float, nargs='?', default=0.001, help='learning rate')
-    parser.add_argument('--l1', type=int, nargs='?', default=8192, help='layer 1 neurons')
-    parser.add_argument('--l2', type=int, nargs='?', default=256, help='layer 2 neurons')
+    parser.add_argument('--lr', type=float, nargs='?', default=0.002, help='learning rate')
+    parser.add_argument('--l1', type=int, nargs='?', default=16384, help='layer 1 neurons')
+    parser.add_argument('--l2', type=int, nargs='?', default=64, help='layer 2 neurons')
     parser.add_argument('--dp', type=float, nargs='?', default=0.3, help='dropout percentage')
     parser.add_argument('--devrun', action='store_true', help='dev mode quickrun')
     parser.add_argument('--makefigs', action='store_true', help='toggle making figures on')
@@ -24,32 +23,18 @@ def parse_arguments() -> argparse.Namespace:
     return parser.parse_args()
 
 
-
-
-
-def generate_plots_and_videos(train_x: np.ndarray, train_y: np.ndarray, train_r: np.ndarray,
-                              valid_x: np.ndarray, valid_y: np.ndarray, valid_r: np.ndarray,
-                              shape_x: tuple, figbasename: str, l1: int, l2: int, makevids: bool):
+def generate_plots_and_videos(data_valid: list, figbasename: str, makevids: bool):
     """Generate plots and videos."""
     mkdir_figs_vids()
-    
-    xn = shape_x[1]
-    pn = min(500, len(valid_x))  # number of snapshots to plot
-    t = pn * 3//5    # pick a snapshot to plot about 60% up the plot for aesthetics
-    
-    plot_1d_results(train_x[:pn,:xn], train_y[:pn,:], train_r[:pn,:], t=t)
-    plt.savefig(f"figs/{figbasename}_train_{l1}_{l2}.png",
-        transparent=False, bbox_inches='tight', dpi=300)
-        
-    plot_1d_results(valid_x[:pn,:xn], valid_y[:pn,:], valid_r[:pn,:], t=t)
-    plt.savefig(f"figs/{figbasename}_valid_{l1}_{l2}.png",
-        transparent=False, bbox_inches='tight', dpi=300)
+
+    print(f"Making figure {figbasename}.png")
+    plot_1d_results(*data_valid)
+    plt.savefig(f"figs/{figbasename}.png", transparent=False, bbox_inches='tight', dpi=300)
 
     if makevids:
         print("Making video...")
-        f = lambda t: plot_1d_results(valid_x[:pn,:xn], valid_y[:pn,:], valid_r[:pn,:], t=t)
-        generate_video(f, round(pn*0.95), start=round(pn*0.05),
-            directory='figs/vids', filename=f"{figbasename}_valid")
+        plot_to_frame = lambda t: plot_1d_results(*data_valid, inset_snapshot_t=t)
+        generate_video(plot_to_frame, 475, start=25, directory='figs/vids', filename=f"{figbasename}")
 
 
 def main(datafile: str, valid_n: int, epochs: int, bs: int, lr: float, l1: int, l2: int, dp: float,
@@ -62,15 +47,17 @@ def main(datafile: str, valid_n: int, epochs: int, bs: int, lr: float, l1: int, 
     print(f"train_loss: {train_loss}")
     print(f"valid_loss: {valid_loss}")
 
+    data_train = reshape_1d_data(train_x, train_y, train_r, shape_x)
+    data_valid = reshape_1d_data(valid_x, valid_y, valid_r, shape_x)
+
     if makefigs or makevids:
-        figbasename = Path(datafile).stem
-        generate_plots_and_videos(train_x, train_y, train_r, valid_x, valid_y, valid_r,
-                                  shape_x, figbasename, l1, l2, makevids)
+        figbasename =f"{Path(datafile).stem}_valid_{l1}_{l2}"
+        generate_plots_and_videos(data_valid, figbasename, makevids)
 
-    return (train_x, train_y, train_r), (valid_x, valid_y, valid_r)
+    return data_train, data_valid
 
 
-if __name__ == "__main__":  
-    matplotlib_settings()  
+if __name__ == "__main__":
+    matplotlib_settings()
     args = parse_arguments()
     main(**vars(args))

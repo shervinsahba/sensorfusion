@@ -89,15 +89,23 @@ def generate_video(plot_function,t_max,start=0,directory='figs',filename='out',
         subprocess.call(['rm']+glob.glob(f"{Path(directory,tmp)}*.png"))
 
 
-def plot_1d_results(x, y, r, t=None, diff=False, cmap='inferno', fig=None, ax=None):
+def plot_1d_results(x, y, r, snapshots_to_plot=500, inset_snapshot_t="auto", diff=False, cmap='inferno', fig=None, ax=None):
+    # number of snapshots to plot
+    snapshots_to_plot = min(500, len(y))
+    x = x[:snapshots_to_plot, :]
+    y = y[:snapshots_to_plot, :]
+    r = r[:snapshots_to_plot, :]
+
+    # setup plotting data
     xs = x.shape[1]
     ys = y.shape[1]
     data = [np.repeat(x,ys//xs,axis=1), y, r]
     labels = ["$X$","$Y$","$\hat{Y}$"]
-    if diff: 
+    if diff:
         data.append(y-r)
         labels.append("$\Delta$")
     
+    # plot images
     fig, ax = plt.subplots(1,len(data),figsize=(10,3),sharey=True,constrained_layout=True)
     images = [axis.pcolormesh(p, cmap=cmap) for axis,p in zip(ax,data)]
     normalize_colormaps(images)
@@ -117,7 +125,7 @@ def plot_1d_results(x, y, r, t=None, diff=False, cmap='inferno', fig=None, ax=No
         axins.spines[['left','right','top','bottom']].set_visible(False)
 
     def _inset_plot(axis,p,ylim):
-        axins = axis.inset_axes([0,t/x.shape[0] - 0.05,1, 0.1],transform=axis.transAxes)
+        axins = axis.inset_axes([0,inset_snapshot_t/x.shape[0] - 0.05,1, 0.1],transform=axis.transAxes)
         axins.plot(p,color='white',lw=2.5)
         axins.set_xlim(0,ys)
         axins.set_ylim(ylim)
@@ -125,18 +133,22 @@ def plot_1d_results(x, y, r, t=None, diff=False, cmap='inferno', fig=None, ax=No
         return axins
 
     def _inset_label(axis,text):
-        axins = axis.inset_axes([0.85,t/x.shape[0] - 0.14,0.125,0.09],transform=axis.transAxes)
+        axins = axis.inset_axes([0.85,inset_snapshot_t/x.shape[0] - 0.14,0.125,0.09],transform=axis.transAxes)
         axins.text(0.13,0.32,text,fontsize=18,color='w',transform=axins.transAxes)
         axins.set_facecolor('black')
         _inset_style(axins)        
         return axins
 
-    if t >= 0:      # if a time a specified, make inset plots
+    if inset_snapshot_t == "auto":
+        # pick a snapshot to plot about 60% up the plot for aesthetics
+        inset_snapshot_t = snapshots_to_plot * 3//5
+
+    if inset_snapshot_t >= 0: # if a time a specified, make inset plots
         labels_inset = ["$x_i$","$y_i$","$\hat{y}_i$"]
         if diff: labels_inset.append("$\delta_i$")
         
         for axis,p,label in zip(ax,data,labels_inset):
-            _inset_plot(axis,p[t,:],(np.min(y),np.max(y)))
+            _inset_plot(axis,p[inset_snapshot_t,:],(np.min(y),np.max(y)))
             _inset_label(axis,label)
     
     return fig, ax
