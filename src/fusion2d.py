@@ -54,16 +54,16 @@ def generate_plots_and_videos(data_train: list, data_valid: list, figbasename: s
 def main(datafile: str, valid_n: int, epochs: int, bs: int, lr: float, l1: int, l2: int, dp: float,
          devrun: bool = False, makefigs: bool = False, makevids: bool = False) -> tuple:
     """Run the main script."""
-    dataset_x, dataset_y, shape_x, shape_y, en = load_data(datafile, "data/ael/")
+    dataset_x, dataset_y, shape_x, shape_y, _ = load_data(datafile, "data/ael/")
     train_x, train_y, valid_x, valid_y = prepare_data(dataset_x, dataset_y, valid_n)
     model = train_model(train_x, train_y, valid_x, valid_y, bs, lr, l1, l2, dp, epochs, devrun)
     train_r, train_loss, valid_r, valid_loss = evaluate_model(model, train_x, train_y, valid_x, valid_y)
     print(f"train_loss: {train_loss}")
     print(f"valid_loss: {valid_loss}")
 
-    data_train, data_valid = reshape_2d_data(train_x, train_y, train_r,
-                                             valid_x, valid_y, valid_r,
-                                             en, shape_x, shape_y)
+    data_train = reshape_2d_data(train_x, train_y, train_r, shape_x, shape_y)
+    data_valid = reshape_2d_data(valid_x, valid_y, valid_r, shape_x, shape_y)
+
     if makefigs or makevids:
         figbasename = Path(datafile).stem
         generate_plots_and_videos(data_train, data_valid, figbasename, l1, l2, makevids)

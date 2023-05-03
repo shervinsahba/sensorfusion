@@ -220,21 +220,18 @@ def radial_psd(image, r=None, log=True, origin='center'):
     return radial_mean(psd, r=r, origin=origin)
 
 
-def reshape_2d_data(train_x: np.ndarray, train_y: np.ndarray, train_r: np.ndarray,
-                 valid_x: np.ndarray, valid_y: np.ndarray, valid_r: np.ndarray,
-                 en: int, shape_x: tuple, shape_y: tuple) -> tuple:
+def reshape_1d_data(x: np.ndarray, y: np.ndarray, r: np.ndarray, 
+                    shape_x: tuple) -> tuple:
     """Reshape data and unstack training set."""
-    train_x = train_x[:, :train_x.shape[1] // en]
-    valid_x = valid_x[:, :valid_x.shape[1] // en]
-    data_train = [
-        train_x.reshape(-1, *shape_x[1:]),
-        train_y.reshape(-1, *shape_y[1:]),
-        train_r.reshape(-1, *shape_y[1:])
-    ]
-    data_valid = [
-        valid_x.reshape(-1, *shape_x[1:]),
-        valid_y.reshape(-1, *shape_y[1:]),
-        valid_r.reshape(-1, *shape_y[1:])
-    ]
+    x = x[:, :shape_x[1]]
+    return x, y, r
 
-    return data_train, data_valid
+
+def reshape_2d_data(x: np.ndarray, y: np.ndarray, r: np.ndarray,
+                 shape_x: tuple, shape_y: tuple) -> tuple:
+    """Reshape data and unstack training set."""
+    x = x[:, :np.product(shape_x[1:])]
+    x = x.reshape(-1, *shape_x[1:])
+    y = y.reshape(-1, *shape_y[1:])
+    r = r.reshape(-1, *shape_y[1:])
+    return x, y, r
